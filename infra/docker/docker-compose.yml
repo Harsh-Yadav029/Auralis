@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  auralis-web:
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_SIGNALING_URL=ws://localhost:8000/ws/signaling
+
+  auralis-gateway:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+      - "50000-50050:50000-50050/udp"
+    environment:
+      - ML_SERVICE_URL=http://auralis-ml-service:8001
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - CARTESIA_API_KEY=${CARTESIA_API_KEY}
+    depends_on:
+      - auralis-ml-service
+
+  auralis-ml-service:
+    build:
+      context: ../../ml-service
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - WHISPER_MODEL=distil-small.en
+      - COMPUTE_TYPE=int8
+
+  coturn:
+    image: coturn/coturn:4.6.2
+    ports:
+      - "3478:3478/udp"
+      - "3478:3478/tcp"
+    volumes:
+      - ../coturn/turnserver.conf:/etc/coturn/turnserver.conf:ro
