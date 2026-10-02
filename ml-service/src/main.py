@@ -2,10 +2,10 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import numpy as np
 
-from ml-service.src.config import settings
-from ml-service.src.models.vad_silero import SileroVADDetector
-from ml-service.src.models.asr_whisper import FasterWhisperEngine
-from ml-service.src.models.emotion_wav2vec2 import Wav2Vec2EmotionClassifier
+from src.config import settings
+from src.models.vad_silero import SileroVADDetector
+from src.models.asr_whisper import FasterWhisperEngine
+from src.models.emotion_wav2vec2 import Wav2Vec2EmotionClassifier
 
 app = FastAPI(title=settings.app_name, debug=settings.debug)
 
@@ -22,4 +22,4 @@ async def health():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("ml-service.src.main:app", host="0.0.0.0", port=8001, reload=True)
+    uvicorn.run("src.main:app", host="0.0.0.0", port=8001, reload=True)

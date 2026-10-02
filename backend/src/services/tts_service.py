@@ -3,7 +3,7 @@ import json
 import asyncio
 import numpy as np
 import websockets
-from backend.src.config import settings
+from src.config import settings
 
 class CartesiaTTSService:
     def __init__(self, api_key: str = None):

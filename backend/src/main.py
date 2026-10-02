@@ -4,11 +4,11 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate
 
-from backend.src.config import settings
-from backend.src.services.webrtc_service import CustomOutboundAudioTrack
-from backend.src.services.state_manager import Orchestrator
-from backend.src.services.llm_service import GroqContextEngine
-from backend.src.services.tts_service import CartesiaTTSService
+from src.config import settings
+from src.services.webrtc_service import CustomOutboundAudioTrack
+from src.services.state_manager import Orchestrator
+from src.services.llm_service import GroqContextEngine
+from src.services.tts_service import CartesiaTTSService
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("auralis.gateway")
@@ -86,4 +86,4 @@ async def signaling_endpoint(websocket: WebSocket):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("backend.src.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True)
