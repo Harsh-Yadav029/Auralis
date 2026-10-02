@@ -1,9 +1,9 @@
 fastapi>=0.111.0
 uvicorn[standard]>=0.30.0
-torch==2.3.1
+torch>=2.2.0
 faster-whisper>=1.0.2
 onnxruntime>=1.18.0
 transformers>=4.41.0
-torchaudio>=2.3.1
+torchaudio>=2.2.0
 numpy>=1.26.4
 scipy>=1.13.0
