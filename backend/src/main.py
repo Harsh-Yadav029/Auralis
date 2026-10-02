@@ -3,6 +3,7 @@ import logging
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate
+from aiortc.sdp import candidate_from_sdp
 
 from src.config import settings
 from src.services.webrtc_service import CustomOutboundAudioTrack
@@ -63,12 +64,12 @@ async def signaling_endpoint(websocket: WebSocket):
 
             elif message["type"] == "candidate":
                 candidate_info = message["candidate"]
-                candidate = RTCIceCandidate(
-                    sdpMid=candidate_info.get("sdpMid"),
-                    sdpMLineIndex=candidate_info.get("sdpMLineIndex"),
-                    candidate=candidate_info.get("candidate")
-                )
-                await pc.addIceCandidate(candidate)
+                cand_str = candidate_info.get("candidate")
+                if cand_str:
+                    candidate = candidate_from_sdp(cand_str)
+                    candidate.sdpMid = candidate_info.get("sdpMid")
+                    candidate.sdpMLineIndex = candidate_info.get("sdpMLineIndex")
+                    await pc.addIceCandidate(candidate)
 
             elif message["type"] == "user_turn":
                 # Handle sample turn request from client / testing harness
