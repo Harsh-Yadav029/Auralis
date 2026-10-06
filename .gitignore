@@ -1,9 +1,10 @@
-# Environment & Secrets
+# Environment & Secrets — NEVER commit these
 .env
 .env.local
+.env.*.local
 *.env
 
-# Python
+# Python — virtual environments, cache, build artifacts
 __pycache__/
 *.py[cod]
 *$py.class
@@ -30,28 +31,61 @@ wheels/
 .coverage
 htmlcov/
 
+# ML Model weights (large binary files — cache locally, never commit)
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.onnx
+*.ckpt
+*.h5
+.cache/
+models/
+
 # Node.js / React Frontend
 node_modules/
 frontend/node_modules/
 frontend/dist/
 frontend/build/
 .npm
-*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
-# WebRTC & Media Temp Files
+# Logs
+*.log
+logs/
+
+# Audio & Media Temp Files (PCM buffers, audio chunks)
 *.wav
 *.mp3
 *.pcm
 *.ogg
 *.opus
+*.flac
+*.aac
 
-# IDEs & System
+# IDEs & Editor config
 .vscode/
 .idea/
 *.swp
 *.swo
+*.sublime-project
+*.sublime-workspace
+
+# OS generated
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+
+# Docker
+*.override.yml
+
+# Jupyter (if used for model experiments)
+.ipynb_checkpoints/
+*.ipynb
