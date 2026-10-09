@@ -1,7 +1,6 @@
 import asyncio
 import fractions
 import numpy as np
-import scipy.signal
 from aiortc import MediaStreamTrack
 from av import AudioFrame
 
@@ -20,7 +19,12 @@ class CustomOutboundAudioTrack(MediaStreamTrack):
         """Resample 16kHz TTS output to 48kHz and push to outbound WebRTC queue."""
         if pcm_data_16k.size == 0:
             return
-        resampled = scipy.signal.resample_poly(pcm_data_16k, 3, 1).astype(np.int16)
+        
+        # Replaced scipy.signal.resample_poly with numpy interpolation to avoid DLL load issues
+        x_old = np.linspace(0, 1, len(pcm_data_16k))
+        x_new = np.linspace(0, 1, len(pcm_data_16k) * 3)
+        resampled = np.interp(x_new, x_old, pcm_data_16k).astype(np.int16)
+        
         await self.queue.put(resampled)
 
     async def recv(self):
