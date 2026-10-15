@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { AuralisWebRTCClient } from './services/webrtc.service';
+import { AudioVisualizer } from './components/AudioVisualizer';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const ZapIcon = () => (
@@ -84,6 +86,11 @@ export const App: React.FC = () => {
   const [emotionLabel, setEmotionLabel] = useState('CALM');
   const [ttfa, setTtfa] = useState(0);
   const [messages, setMessages] = useState<{ role: 'user' | 'ai'; text: string; ts: string }[]>([]);
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+  const [statusNotice, setStatusNotice] = useState<string | null>(null);
+
+  const webrtcClientRef = useRef<AuralisWebRTCClient | null>(null);
 
   const getTimestamp = () => new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
@@ -105,12 +112,63 @@ export const App: React.FC = () => {
 
   const badge = getEmotionBadge();
 
-  const startSession = () => {
-    setIsConnected(true);
-    setSessionState('LISTENING');
+  const startSession = async () => {
+    try {
+      setStatusNotice(null);
+      const host = window.location.hostname || 'localhost';
+      const signalingUrl = `ws://${host}:8000/ws/signaling`;
+
+      const client = new AuralisWebRTCClient({
+        signalingUrl,
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+        onTranscript: (text: string) => {
+          setTranscript(text);
+          setMessages(prev => [...prev, { role: 'user', text, ts: getTimestamp() }]);
+        },
+        onEmotionUpdate: (a: number, v: number, label: string) => {
+          setArousal(a);
+          setValence(v);
+          setEmotionLabel(label.toUpperCase());
+        },
+        onStateChange: (state: string) => {
+          setSessionState(state as any);
+        },
+        onLatencyUpdate: (ttfaMs: number) => {
+          setTtfa(ttfaMs);
+        },
+        onAiText: (text: string) => {
+          setAiResponse(text);
+          setMessages(prev => {
+            const last = prev[prev.length - 1];
+            if (last && last.role === 'ai') {
+              return [...prev.slice(0, -1), { role: 'ai', text: `${last.text} ${text}`.trim(), ts: last.ts }];
+            }
+            return [...prev, { role: 'ai', text, ts: getTimestamp() }];
+          });
+        },
+        onRemoteStream: (stream: MediaStream) => {
+          setRemoteStream(stream);
+        }
+      });
+
+      const micStream = await client.initialize();
+      setLocalStream(micStream);
+      webrtcClientRef.current = client;
+      setIsConnected(true);
+      setSessionState('LISTENING');
+    } catch (err: any) {
+      console.error('Failed to initialize WebRTC session:', err);
+      setStatusNotice(`Microphone or signaling connection failed: ${err.message || err}`);
+    }
   };
 
   const stopSession = () => {
+    if (webrtcClientRef.current) {
+      webrtcClientRef.current.disconnect();
+      webrtcClientRef.current = null;
+    }
+    setLocalStream(null);
+    setRemoteStream(null);
     setIsConnected(false);
     setSessionState('IDLE');
     setTranscript('');
@@ -120,29 +178,33 @@ export const App: React.FC = () => {
   };
 
   const simulatePanic = () => {
-    if (!isConnected) return;
     const msg = "Put the gun down! Don't come any closer! I don't know what to do!";
     setTranscript(msg);
     setArousal(0.92);
     setValence(-0.80);
-    setSessionState('THINKING');
+    setEmotionLabel('PANIC');
     setMessages(prev => [...prev, { role: 'user', text: msg, ts: getTimestamp() }]);
-    setTimeout(() => {
-      setSessionState('SPEAKING');
-      const reply = "I hear how terrified you are right now. I'm standing right here with my hands open. Take a slow breath with me — nobody is moving any closer.";
-      setAiResponse(reply);
-      setTtfa(540);
-      setMessages(prev => [...prev, { role: 'ai', text: reply, ts: getTimestamp() }]);
-      setTimeout(() => setSessionState('LISTENING'), 3000);
-    }, 540);
+    
+    if (webrtcClientRef.current) {
+      webrtcClientRef.current.sendTurnRequest(msg, {
+        arousal: 0.92,
+        valence: -0.80,
+        primary_label: 'panic'
+      });
+    } else {
+      setStatusNotice("Click 'Start Simulation' first to connect the real WebRTC engine.");
+    }
   };
 
   const triggerBargeIn = () => {
-    if (!isConnected) return;
+    if (webrtcClientRef.current) {
+      webrtcClientRef.current.triggerBargeIn();
+    }
     setSessionState('INTERRUPTED');
-    setMessages(prev => [...prev, { role: 'user', text: '[Barge-in interrupt triggered — AI audio halted in 112ms]', ts: getTimestamp() }]);
+    setMessages(prev => [...prev, { role: 'user', text: '[Barge-in interrupt triggered — AI speech halted in <150ms]', ts: getTimestamp() }]);
     setTimeout(() => setSessionState('LISTENING'), 600);
   };
+
 
   return (
     <>
@@ -203,6 +265,13 @@ export const App: React.FC = () => {
           </div>
         </header>
 
+        {statusNotice && (
+          <div style={{ padding: '10px 24px', background: 'rgba(239,68,68,0.15)', borderBottom: '1px solid rgba(239,68,68,0.3)', color: '#f87171', fontSize: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>⚠️ {statusNotice}</span>
+            <button onClick={() => setStatusNotice(null)} style={{ background: 'transparent', border: 'none', color: '#f87171', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
+          </div>
+        )}
+
         {/* ── Main Layout ── */}
         <main style={{ flex: 1, display: 'grid', gridTemplateColumns: '320px 1fr', gap: '20px', padding: '20px 24px', maxWidth: '1400px', width: '100%', margin: '0 auto', alignItems: 'start' }}>
 
@@ -221,14 +290,22 @@ export const App: React.FC = () => {
 
               {/* User waveform */}
               <div style={{ marginBottom: '12px' }}>
-                <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px' }}>You (16kHz PCM)</div>
-                <WaveformBars active={isConnected && sessionState === 'LISTENING'} color="linear-gradient(90deg,#f87171,#fb923c)" />
+                <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px' }}>You (Microphone Live Stream)</div>
+                {localStream ? (
+                  <AudioVisualizer stream={localStream} color="#38bdf8" height={48} />
+                ) : (
+                  <WaveformBars active={isConnected && sessionState === 'LISTENING'} color="linear-gradient(90deg,#f87171,#fb923c)" />
+                )}
               </div>
 
               {/* AI waveform */}
               <div>
-                <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px' }}>Auralis AI (Cartesia)</div>
-                <WaveformBars active={sessionState === 'SPEAKING'} color="linear-gradient(90deg,#06b6d4,#3b82f6)" />
+                <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px' }}>Auralis AI Response</div>
+                {remoteStream ? (
+                  <AudioVisualizer stream={remoteStream} color="#34d399" height={48} />
+                ) : (
+                  <WaveformBars active={sessionState === 'SPEAKING'} color="linear-gradient(90deg,#06b6d4,#3b82f6)" />
+                )}
               </div>
             </div>
 

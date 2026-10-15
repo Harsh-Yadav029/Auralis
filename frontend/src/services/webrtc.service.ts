@@ -5,6 +5,8 @@ export interface WebRTCConfig {
   onEmotionUpdate: (arousal: number, valence: number, label: string) => void;
   onStateChange: (state: string) => void;
   onLatencyUpdate: (ttfaMs: number) => void;
+  onAiText?: (text: string) => void;
+  onRemoteStream?: (stream: MediaStream) => void;
 }
 
 export class AuralisWebRTCClient {
@@ -12,6 +14,7 @@ export class AuralisWebRTCClient {
   private ws: WebSocket | null = null;
   private dataChannel: RTCDataChannel | null = null;
   private localStream: MediaStream | null = null;
+  private remoteAudioElement: HTMLAudioElement | null = null;
 
   constructor(private config: WebRTCConfig) {}
 
@@ -34,14 +37,32 @@ export class AuralisWebRTCClient {
     });
 
     this.pc.ontrack = (event) => {
-      const remoteAudio = new Audio();
-      remoteAudio.srcObject = event.streams[0];
-      remoteAudio.play().catch(console.error);
+      if (!this.remoteAudioElement) {
+        this.remoteAudioElement = new Audio();
+        this.remoteAudioElement.autoplay = true;
+      }
+      this.remoteAudioElement.srcObject = event.streams[0];
+      this.remoteAudioElement.play().catch(console.error);
+      if (this.config.onRemoteStream) {
+        this.config.onRemoteStream(event.streams[0]);
+      }
     };
 
     this.setupDataChannel();
     await this.connectSignaling();
     return this.localStream;
+  }
+
+  getLocalStream(): MediaStream | null {
+    return this.localStream;
+  }
+
+  private handleEvent(data: any) {
+    if (data.event === "TRANSCRIPT") this.config.onTranscript(data.text);
+    if (data.event === "EMOTION") this.config.onEmotionUpdate(data.arousal, data.valence, data.label);
+    if (data.event === "STATE_CHANGE") this.config.onStateChange(data.state);
+    if (data.event === "LATENCY") this.config.onLatencyUpdate(data.ttfa);
+    if (data.event === "AI_TEXT" && this.config.onAiText) this.config.onAiText(data.text);
   }
 
   private setupDataChannel() {
@@ -50,10 +71,7 @@ export class AuralisWebRTCClient {
     this.dataChannel.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        if (data.event === "TRANSCRIPT") this.config.onTranscript(data.text);
-        if (data.event === "EMOTION") this.config.onEmotionUpdate(data.arousal, data.valence, data.label);
-        if (data.event === "STATE_CHANGE") this.config.onStateChange(data.state);
-        if (data.event === "LATENCY") this.config.onLatencyUpdate(data.ttfa);
+        this.handleEvent(data);
       } catch (err) {
         console.error("Failed to parse DataChannel event", err);
       }
@@ -69,11 +87,17 @@ export class AuralisWebRTCClient {
     };
 
     this.ws.onmessage = async (event) => {
-      const msg = JSON.parse(event.data);
-      if (msg.type === "answer") {
-        await this.pc?.setRemoteDescription(new RTCSessionDescription(msg));
-      } else if (msg.type === "candidate") {
-        await this.pc?.addIceCandidate(new RTCIceCandidate(msg.candidate));
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.type === "answer") {
+          await this.pc?.setRemoteDescription(new RTCSessionDescription(msg));
+        } else if (msg.type === "candidate") {
+          await this.pc?.addIceCandidate(new RTCIceCandidate(msg.candidate));
+        } else if (msg.event) {
+          this.handleEvent(msg);
+        }
+      } catch (e) {
+        console.error("Error handling signaling message", e);
       }
     };
   }
@@ -96,8 +120,12 @@ export class AuralisWebRTCClient {
 
   disconnect() {
     this.localStream?.getTracks().forEach((track) => track.stop());
+    if (this.remoteAudioElement) {
+      this.remoteAudioElement.srcObject = null;
+    }
     this.dataChannel?.close();
     this.pc?.close();
     this.ws?.close();
   }
 }
+
