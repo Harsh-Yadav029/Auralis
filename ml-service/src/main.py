@@ -136,3 +136,6 @@ async def websocket_audio_stream(websocket: WebSocket):
     except Exception as e:
         logger.error(f"Error in ML Audio Streaming: {e}", exc_info=True)
 
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("src.main:app", host="0.0.0.0", port=8001, reload=True)
