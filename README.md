@@ -89,47 +89,51 @@ Instead, Auralis:
 Auralis/
 ├── backend/                     # WebRTC Gateway Microservice (FastAPI + aiortc)
 │   ├── src/
-│   │   ├── main.py              # FastAPI WebSocket signaling server
-│   │   ├── config.py            # Pydantic settings & API key loader
+│   │   ├── main.py              # FastAPI WebRTC signaling & audio dispatch loop
+│   │   ├── config.py            # Pydantic settings & environment loader
 │   │   └── services/
-│   │       ├── webrtc_service.py  # Custom outbound AudioStreamTrack
-│   │       ├── llm_service.py     # Groq Llama 3.1 + emotion prompt injection
-│   │       ├── tts_service.py     # Cartesia Sonic WebSocket streaming client
-│   │       └── state_manager.py   # Orchestrator & barge-in cancellation
-│   └── requirements.txt
+│   │       ├── webrtc_service.py  # Inbound resampling & CustomOutboundAudioTrack
+│   │       ├── ml_client.py       # WebSocket streaming client to ML Audio Service
+│   │       ├── llm_service.py     # Groq Llama 3.1 crisis negotiator prompt engine
+│   │       ├── tts_service.py     # Cartesia Sonic streaming audio synthesizer
+│   │       └── state_manager.py   # State orchestrator & <150ms barge-in canceller
+│   ├── requirements.txt
+│   └── .env                     # Cloud API credentials (GROQ_API_KEY, CARTESIA_API_KEY)
 │
-├── ml-service/                  # ML Audio Microservice (Whisper + Wav2Vec2 + VAD)
+├── ml-service/                  # ML Inference Microservice (VAD + Whisper + Wav2Vec2)
 │   ├── src/
-│   │   ├── main.py              # FastAPI ML service entry point
+│   │   ├── main.py              # FastAPI WebSocket (/ws/stream) & REST inference
+│   │   ├── config.py            # Model parameters (int8, VAD threshold, hangover)
 │   │   └── models/
-│   │       ├── vad_silero.py    # Silero VAD 30ms frame detector
-│   │       ├── asr_whisper.py   # Faster-Whisper ASR engine
-│   │       └── emotion_wav2vec2.py  # Acoustic emotion classifier
+│   │       ├── vad_silero.py    # Silero VAD real-time chunk & hangover detector
+│   │       ├── asr_whisper.py   # Faster-Whisper int8 streaming transcriber
+│   │       └── emotion_wav2vec2.py  # Wav2Vec2 Valence-Arousal emotion model
 │   └── requirements.txt
 │
 ├── frontend/                    # React 18 + Vite + TypeScript Web App
 │   ├── src/
 │   │   ├── App.tsx              # Crisis Negotiation Simulator Dashboard
 │   │   ├── services/
-│   │   │   └── webrtc.service.ts  # WebRTC client (getUserMedia, PeerConnection)
+│   │   │   └── webrtc.service.ts  # WebRTC peer connection & data channel manager
 │   │   └── components/
-│   │       ├── AudioVisualizer.tsx  # 60fps Web Audio API canvas waveform
-│   │       ├── EmotionMeter.tsx     # Arousal / Valence 2D meter
-│   │       └── LatencyHUD.tsx       # Real-time TTFA & barge-in monitor
+│   │       ├── AudioVisualizer.tsx  # 60fps Web Audio API waveform visualizer
+│   │       ├── EmotionMeter.tsx     # 2D Arousal/Valence acoustic emotion radar
+│   │       └── LatencyHUD.tsx       # Real-time TTFA & barge-in latency monitor
 │   └── package.json
 │
 ├── infra/
 │   ├── docker/
-│   │   └── docker-compose.yml   # Multi-container local dev environment
+│   │   └── docker-compose.yml   # Multi-container orchestration
 │   └── coturn/
-│       └── turnserver.conf      # Coturn STUN/TURN config for NAT traversal
+│       └── turnserver.conf      # Coturn STUN/TURN server configuration
 │
 ├── .gsd/
-│   ├── SPEC.md                  # Finalized project specification
-│   └── ROADMAP.md               # 4-milestone execution roadmap
+│   ├── SPEC.md                  # Project specification & architectural contracts
+│   └── ROADMAP.md               # Execution milestones & phase checklist
 │
-├── .gitignore                   # Excludes .env, venv/, node_modules/, model weights
+├── .gitignore                   # Excludes .env, virtualenvs, build artifacts, cache, audio dumps
 └── README.md
+
 ```
 
 ---
