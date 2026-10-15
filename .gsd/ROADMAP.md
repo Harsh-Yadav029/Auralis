@@ -4,19 +4,26 @@
 
 ## Milestones
 
-### Milestone 1: Microservice Foundation & WebRTC Infrastructure
-- [ ] Phase 1.1: Backend WebRTC Gateway (`backend/`) setup with FastAPI, `aiortc`, signaling, and 48kHz->16kHz PCM audio resampler.
-- [ ] Phase 1.2: ML Microservice (`ml-service/`) setup with Faster-Whisper ASR, Wav2Vec2 Emotion Classifier, and Silero VAD.
+### Milestone 1: Microservice Foundation & WebRTC Infrastructure [DONE]
+- [x] Phase 1.1: Backend WebRTC Gateway (`backend/`) setup with FastAPI, `aiortc`, signaling, and 48kHz->16kHz PCM audio resampler.
+- [x] Phase 1.2: ML Microservice (`ml-service/`) setup with Faster-Whisper ASR, Wav2Vec2 Emotion Classifier, and Silero VAD.
 
-### Milestone 2: Context Engine & Streaming Pipeline Integration
-- [ ] Phase 2.1: Groq LLM Context Engine (`llm_service.py`) with dynamic system prompt emotion injection.
-- [ ] Phase 2.2: Cartesia Sonic Streaming TTS WebSocket client (`tts_service.py`) and WebRTC Outbound track integration.
-- [ ] Phase 2.3: Async Orchestrator (`state_manager.py`) with sub-150ms full-duplex barge-in cancellation logic.
+### Milestone 2: Context Engine & Streaming Pipeline Integration [DONE]
+- [x] Phase 2.1: Groq LLM Context Engine (`llm_service.py`) with dynamic system prompt emotion injection.
+- [x] Phase 2.2: Cartesia Sonic Streaming TTS WebSocket client (`tts_service.py`) and WebRTC Outbound track integration.
+- [x] Phase 2.3: Async Orchestrator (`state_manager.py`) with sub-150ms full-duplex barge-in cancellation logic.
+- [x] Phase 2.4: MLAudioClient WebSocket bridge — backend streams live PCM frames to ml-service /ws/stream in real-time.
 
-### Milestone 3: Frontend Web App & Telemetry HUD
-- [ ] Phase 3.1: React + Vite application (`frontend/`) with WebRTC Client service, Audio Constraints, and Signaling.
-- [ ] Phase 3.2: Interactive Waveform Visualizer canvas, 2D Emotion Meter, and Latency HUD components.
+### Milestone 3: Frontend Web App & Telemetry HUD [DONE - Core]
+- [x] Phase 3.1: React + Vite application (`frontend/`) with real AuralisWebRTCClient service, live mic capture, and WebRTC signaling.
+- [x] Phase 3.2: Live Web Audio API AnalyserNode canvas visualizers for mic and AI streams; Emotion Meter; Latency HUD; status notice banner.
 
-### Milestone 4: Production Infrastructure & Benchmarking
-- [ ] Phase 4.1: Docker Compose environment, multi-stage GPU Dockerfiles, and Coturn TURN server config.
-- [ ] Phase 4.2: Latency measurement harness and automated test suite.
+### Milestone 4: Advanced Intelligence Layer [NEXT]
+- [ ] Phase 4.1: FBI BCSM tactical scoring engine (Active Listening -> Empathy -> Rapport -> Influence -> Behavioral Change).
+- [ ] Phase 4.2: Dual-stream emotion fusion (acoustic Arousal vs semantic LLM Valence discrepancy detection).
+- [ ] Phase 4.3: Emotion-conditioned TTS prosody (cadence and pitch F0 modulation based on trainee arousal).
+- [ ] Phase 4.4: Multi-scenario incident selector (Hostage / Bridge Jumper / Cyber Extortion).
+
+### Milestone 5: Production Infrastructure & Benchmarking
+- [ ] Phase 5.1: Docker Compose environment, multi-stage GPU Dockerfiles, and Coturn TURN server config.
+- [ ] Phase 5.2: End-to-end TTFA latency measurement harness and automated test suite.
