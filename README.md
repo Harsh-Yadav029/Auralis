@@ -2,245 +2,338 @@
 
 <br/>
 
-<img src="https://img.shields.io/badge/AURALIS-Real--Time%20Voice%20AI-06b6d4?style=for-the-badge&logo=lightning&logoColor=white" />
+<img src="https://img.shields.io/badge/AURALIS-Real--Time%20Voice%20AI-06b6d4?style=for-the-badge&logo=lightning&logoColor=white" alt="Auralis Badge" />
 
 <h1>Auralis — Real-Time Voice-to-Voice Emotion Engine</h1>
 
-<p>A production-grade, sub-800ms voice AI platform for Crisis Negotiation Training.<br/>
-Streams microphone audio over WebRTC, extracts acoustic emotion, and speaks back an emotionally-aware de-escalation response before the conversation feels interrupted.</p>
+<p>
+  <strong>A production-grade, sub-800ms full-duplex voice AI architecture for high-stakes Crisis Negotiation Simulation.</strong><br/>
+  Combines ultra-low-latency WebRTC streaming, acoustic emotion profiling (Arousal & Valence), Groq LPU LLM inference, and instantaneous barge-in audio playback.
+</p>
 
-<br/>
-
-[![Python](https://img.shields.io/badge/Python-3.11-3776ab?style=flat-square&logo=python&logoColor=white)](https://python.org)
-[![React](https://img.shields.io/badge/React-18-61dafb?style=flat-square&logo=react&logoColor=black)](https://reactjs.org)
+[![Python](https://img.shields.io/badge/Python-3.11+-3776ab?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![WebRTC](https://img.shields.io/badge/WebRTC-aiortc-orange?style=flat-square)](https://aiortc.readthedocs.io)
-[![Groq](https://img.shields.io/badge/LLM-Groq%20Llama%203.1-f55036?style=flat-square)](https://console.groq.com)
+[![WebRTC](https://img.shields.io/badge/WebRTC-aiortc%201.9-orange?style=flat-square)](https://aiortc.readthedocs.io)
+[![Faster-Whisper](https://img.shields.io/badge/ASR-Faster--Whisper%20(int8)-purple?style=flat-square)](https://github.com/SYSTRAN/faster-whisper)
+[![Groq LPU](https://img.shields.io/badge/LLM-Groq%20Llama%203.1-f55036?style=flat-square)](https://console.groq.com)
+[![Cartesia](https://img.shields.io/badge/TTS-Cartesia%20Sonic%20API-blue?style=flat-square)](https://cartesia.ai)
+[![React](https://img.shields.io/badge/Frontend-React%2018%20%2B%20Vite%20%2B%20TS-61dafb?style=flat-square&logo=react&logoColor=black)](https://react.dev)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
 </div>
 
 ---
 
-## 🧠 What is Auralis?
-
-Auralis solves the core flaw in conversational AI: **the standard STT → LLM → TTS pipeline adds 3–5 seconds of latency and completely discards the speaker's emotional tone.**
-
-Instead, Auralis:
-1. Streams raw mic audio over **WebRTC (Opus/UDP)**
-2. Simultaneously transcribes speech (**Faster-Whisper**) and classifies acoustic emotion (**Wav2Vec2** — Arousal & Valence)
-3. Injects the emotional context into a crisis negotiator persona (**Groq Llama 3.1 8B**)
-4. Streams the response back as synthesized speech (**Cartesia Sonic**) in byte-chunks
-5. Supports **full-duplex barge-in** — if the user speaks mid-response, AI audio halts in **< 150ms**
+## 📌 Table of Contents
+- [Executive Overview](#-executive-overview)
+- [Key Features](#-key-features)
+- [End-to-End Latency Budget (SLA)](#-end-to-end-latency-budget-sla)
+- [System Architecture](#-system-architecture)
+- [Microservice Ecosystem](#-microservice-ecosystem)
+- [Project Directory Structure](#-project-directory-structure)
+- [Quick Start Guide](#-quick-start-guide)
+  - [Prerequisites](#prerequisites)
+  - [1. Environment Configuration](#1-environment-configuration)
+  - [2. Microservices Setup & Execution](#2-microservices-setup--execution)
+- [Operational Verification & Telemetry](#-operational-verification--telemetry)
+- [API & WebSocket Specifications](#-api--websocket-specifications)
+- [Crisis Negotiation Domain Logic](#-crisis-negotiation-domain-logic)
+- [Roadmap & Development Status](#-roadmap--development-status)
+- [License & Contributions](#-license--contributions)
 
 ---
 
-## ⚡ Performance Targets
+## 🧠 Executive Overview
 
-| Pipeline Stage | Technology | p50 Latency | SLA |
+Conversational speech systems frequently rely on cascading REST APIs (`STT → LLM → TTS`), creating **3,000ms–5,000ms latency**. Critically, standard pipelines convert speech to plaintext, stripping the speaker’s pitch, urgency, and distress, making authentic emotional interaction impossible.
+
+**Auralis** rearchitects conversational voice AI into an event-driven, decoupled microservice pipeline:
+1. **Low-Latency Ingestion**: Streams client audio over **WebRTC (Opus/UDP)** straight to an async gateway.
+2. **Parallel Speech & Emotion Analytics**: Audio frames are fed directly to **Faster-Whisper** and **Wav2Vec2**, yielding transcripts alongside multi-dimensional emotion vectors (`Arousal` & `Valence`).
+3. **Adaptive Emotion Conditioning**: The LLM persona (Groq Llama 3.1 8B) dynamically ingests affective cues, tuning its tactical stance in real time.
+4. **Sub-150ms Full-Duplex Interruption (Barge-in)**: Cancels downstream TTS generation and clears audio queues immediately when user speech resumes.
+
+---
+
+## ✨ Key Features
+
+- **True Full-Duplex WebRTC Streaming**: Eliminates HTTP polling or monolithic WebSockets using peer-to-peer UDP audio tracks with `aiortc`.
+- **Acoustic Emotion Radar**: Calculates Valence (-1.0 to +1.0) and Arousal (0.0 to 1.0) directly from speech sound waves without depending on text sentiment.
+- **Sub-150ms Barge-In Cancellation**: Async event triggers abort ongoing LLM tokens and flush outbound audio buffers the millisecond trainee speech starts.
+- **Enterprise Crisis Persona Engine**: Pre-configured with tactical de-escalation behavior based on the FBI Behavioral Change Stairway Model (BCSM).
+- **60fps Real-Time Audio Telemetry**: React Web Audio API interface measuring live FFT frequency bars, emotional quadrant shifts, and end-to-end TTFA (Time-To-First-Audio).
+
+---
+
+## ⚡ End-to-End Latency Budget (SLA)
+
+| Stage | Component | Typical Latency (p50) | Target SLA |
 |:---|:---|:---:|:---:|
-| Network & Transport | WebRTC Opus / UDP | 20 ms | — |
-| Voice Activity Detection | Silero VAD (30ms frames) | 80 ms | — |
-| Speech-to-Text | Faster-Whisper int8 | 120 ms | < 200ms |
-| Acoustic Emotion | Wav2Vec2 ONNX | 40 ms | — |
-| LLM Inference | Groq Llama 3.1 8B | 80 ms | — |
-| Streaming TTS | Cartesia Sonic API | 150 ms | — |
-| **Total TTFA** | **End-to-End** | **~540 ms** | **< 800ms ✅** |
-| **Barge-in Halt** | **Async Cancellation** | **~112 ms** | **< 150ms ✅** |
+| **Audio Ingestion** | WebRTC Opus over UDP | `~20 ms` | `< 30 ms` |
+| **VAD Detection** | Silero VAD (30ms chunks + 250ms hangover) | `~80 ms` | `< 100 ms` |
+| **Speech-to-Text** | Faster-Whisper `distil-small.en` (int8 CTranslate2) | `~120 ms` | `< 200 ms` |
+| **Acoustic Emotion** | Wav2Vec2 ONNX (computed concurrently with ASR) | `~40 ms` (parallel) | `< 60 ms` |
+| **LLM Inference** | Groq LPU (Llama 3.1 8B Instant) | `~80 ms` (TTFT) | `< 120 ms` |
+| **Streaming Synthesis** | Cartesia Sonic WebSocket API (PCM chunks) | `~150 ms` (TTFB) | `< 200 ms` |
+| **Total Turnaround (TTFA)** | **End-to-End Trainee Voice to AI Response** | **~540 ms** | **< 800 ms** ✅ |
+| **Barge-in Interruption** | **Outbound Audio Stream Cancellation** | **~112 ms** | **< 150 ms** ✅ |
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ System Architecture
 
 ```
-[Browser Mic] ──(Opus/UDP WebRTC)──► [WebRTC Gateway :8000]
-                                              │
-                                    ┌─────────┴──────────┐
-                                    │   ML Audio Service  │
-                                    │        :8001        │
-                                    │  ┌─────────────┐   │
-                                    │  │ Silero VAD  │   │
-                                    │  │ Faster-     │   │
-                                    │  │ Whisper ASR │   │
-                                    │  │ Wav2Vec2    │   │
-                                    │  │ Emotion     │   │
-                                    │  └─────────────┘   │
-                                    └─────────┬──────────┘
-                                              │
-                                    ┌─────────▼──────────┐
-                                    │  Groq API (Cloud)  │
-                                    │  Llama 3.1 8B      │
-                                    │  + Emotion Prompt  │
-                                    └─────────┬──────────┘
-                                              │
-                                    ┌─────────▼──────────┐
-                                    │  Cartesia Sonic    │
-                                    │  Streaming TTS     │
-                                    └─────────┬──────────┘
-                                              │
-[Browser Speaker] ◄──(PCM/WebRTC)────────────┘
+                    ┌───────────────────────────────────────────────┐
+                    │               CLIENT BROWSER                  │
+                    │   React 18 + TypeScript + Web Audio API       │
+                    └───────┬───────────────────────────────▲───────┘
+                            │ Raw Mic Audio (Opus/UDP)      │ Remote AI Track (PCM/Opus)
+                            ▼                               │
+┌───────────────────────────────────────────────────────────┴──────────────────────────┐
+│ BACKEND WEBRTC GATEWAY (:8000)                                                       │
+│                                                                                      │
+│  [ aiortc PeerConnection ] ────► [ 48kHz -> 16kHz PCM Resampler ]                    │
+│                                              │                                       │
+│                                              ▼ (Raw PCM16 Chunks via WS)             │
+│  ┌────────────────────────────────────────────────────────────────────────┐          │
+│  │ ML AUDIO MICROSERVICE (:8001)                                          │          │
+│  │                                                                        │          │
+│  │   [ Silero VAD ] ──────► SPEECH_START (Fires Barge-In Interruption)    │          │
+│  │         │                                                              │          │
+│  │         ▼ SPEECH_END (Hangover trigger)                                │          │
+│  │   ┌─────────────────────────────┬─────────────────────────────┐        │          │
+│  │   │ Faster-Whisper ASR (int8)   │ Wav2Vec2 Emotion Classifier │        │          │
+│  │   └─────────────┬───────────────┴──────────────┬──────────────┘        │          │
+│  │                 ▼                              ▼                       │          │
+│  │          { "transcript": "...",         "emotion": { ... } }           │          │
+│  └─────────────────┬──────────────────────────────┬───────────────────────┘          │
+│                    │                              │                                  │
+│                    ▼                              ▼                                  │
+│       [ Orchestrator / StateManager ] (Prompt Construction & Turn Lock)              │
+│                    │                                                                 │
+│                    ▼ (HTTP/REST Streaming)                                           │
+│       [ Groq Cloud LPU Engine ] ──► Llama 3.1 8B Emotion-Injected Generation         │
+│                    │                                                                 │
+│                    ▼ (Chunked Text Stream)                                           │
+│       [ Cartesia Sonic WebSocket Client ] ──► Streaming 24kHz / 48kHz Audio Chunks   │
+│                    │                                                                 │
+│                    ▼ (CustomOutboundAudioTrack)                                      │
+└────────────────────┴─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 📁 Project Structure
+## 📦 Microservice Ecosystem
+
+The architecture is partitioned into 3 isolated services:
+
+| Service | Port | Tech Stack | Primary Responsibility |
+|:---|:---:|:---|:---|
+| **`frontend/`** | `5173` | React 18, Vite, TypeScript, Tailwind | Trainee negotiation dashboard, WebRTC signaling client, real-time waveform & emotion radar visualizer. |
+| **`backend/`** | `8000` | FastAPI, `aiortc`, WebSockets, Groq SDK | Signaling server, WebRTC peer connection manager, pipeline orchestrator, and Cartesia TTS streaming bridge. |
+| **`ml-service/`** | `8001` | FastAPI, PyTorch, Faster-Whisper, Transformers | Real-time speech inference, Silero Voice Activity Detection, and Wav2Vec2 Arousal/Valence classifier. |
+
+---
+
+## 📁 Project Directory Structure
 
 ```
 Auralis/
-├── backend/                     # WebRTC Gateway Microservice (FastAPI + aiortc)
+├── backend/                             # WebRTC Gateway & Pipeline Orchestrator
 │   ├── src/
-│   │   ├── main.py              # FastAPI WebRTC signaling & audio dispatch loop
-│   │   ├── config.py            # Pydantic settings & environment loader
+│   │   ├── main.py                      # FastAPI WebRTC signaling, track router & entrypoint
+│   │   ├── config.py                    # Environment settings loader (Pydantic Settings)
 │   │   └── services/
-│   │       ├── webrtc_service.py  # Inbound resampling & CustomOutboundAudioTrack
-│   │       ├── ml_client.py       # WebSocket streaming client to ML Audio Service
-│   │       ├── llm_service.py     # Groq Llama 3.1 crisis negotiator prompt engine
-│   │       ├── tts_service.py     # Cartesia Sonic streaming audio synthesizer
-│   │       └── state_manager.py   # State orchestrator & <150ms barge-in canceller
+│   │       ├── webrtc_service.py        # 48kHz->16kHz resampler & CustomOutboundAudioTrack
+│   │       ├── ml_client.py             # Persistent WebSocket bridge to ML Audio Service
+│   │       ├── llm_service.py           # Groq Llama 3.1 emotion prompt injection client
+│   │       ├── tts_service.py           # Cartesia Sonic streaming TTS WebSocket handler
+│   │       └── state_manager.py         # Async state orchestrator & <150ms barge-in canceller
 │   ├── requirements.txt
-│   └── .env                     # Cloud API credentials (GROQ_API_KEY, CARTESIA_API_KEY)
+│   └── .env                             # Secret API Keys (GROQ_API_KEY, CARTESIA_API_KEY)
 │
-├── ml-service/                  # ML Inference Microservice (VAD + Whisper + Wav2Vec2)
+├── ml-service/                          # Dedicated ML Inference Microservice
 │   ├── src/
-│   │   ├── main.py              # FastAPI WebSocket (/ws/stream) & REST inference
-│   │   ├── config.py            # Model parameters (int8, VAD threshold, hangover)
+│   │   ├── main.py                      # WebSocket stream (/ws/stream) & REST inference
+│   │   ├── config.py                    # Whisper model size, compute type, VAD parameters
 │   │   └── models/
-│   │       ├── vad_silero.py    # Silero VAD real-time chunk & hangover detector
-│   │       ├── asr_whisper.py   # Faster-Whisper int8 streaming transcriber
-│   │       └── emotion_wav2vec2.py  # Wav2Vec2 Valence-Arousal emotion model
+│   │       ├── vad_silero.py            # Silero VAD frame parser & hangover tracker
+│   │       ├── asr_whisper.py           # Faster-Whisper int8 CTranslate2 runtime
+│   │       └── emotion_wav2vec2.py      # Wav2Vec2 acoustic valence & arousal classifier
 │   └── requirements.txt
 │
-├── frontend/                    # React 18 + Vite + TypeScript Web App
+├── frontend/                            # React Trainee Dashboard
 │   ├── src/
-│   │   ├── App.tsx              # Crisis Negotiation Simulator Dashboard
+│   │   ├── App.tsx                      # Dashboard orchestrator & telemetry console
 │   │   ├── services/
-│   │   │   └── webrtc.service.ts  # WebRTC peer connection & data channel manager
+│   │   │   └── webrtc.service.ts        # Client WebRTC connection & datachannel handlers
 │   │   └── components/
-│   │       ├── AudioVisualizer.tsx  # 60fps Web Audio API waveform visualizer
-│   │       ├── EmotionMeter.tsx     # 2D Arousal/Valence acoustic emotion radar
-│   │       └── LatencyHUD.tsx       # Real-time TTFA & barge-in latency monitor
-│   └── package.json
+│   │       ├── AudioVisualizer.tsx      # 60fps Web Audio API waveform canvas
+│   │       ├── EmotionMeter.tsx         # 2D quadrant emotion meter (Arousal vs Valence)
+│   │       └── LatencyHUD.tsx           # Live latency gauge (TTFA, VAD, Barge-in)
+│   ├── package.json
+│   └── vite.config.ts
 │
-├── infra/
+├── infra/                               # Deployment & Infrastructure
 │   ├── docker/
-│   │   └── docker-compose.yml   # Multi-container orchestration
+│   │   └── docker-compose.yml           # Multi-container local production environment
 │   └── coturn/
-│       └── turnserver.conf      # Coturn STUN/TURN server configuration
+│       └── turnserver.conf              # STUN/TURN configuration for enterprise NAT traversal
 │
-├── .gsd/
-│   ├── SPEC.md                  # Project specification & architectural contracts
-│   └── ROADMAP.md               # Execution milestones & phase checklist
+├── .gsd/                                # Specification & Development Tracking
+│   ├── SPEC.md                          # Architecture specification & SLAs
+│   └── ROADMAP.md                       # Phase milestone tracking
 │
-├── .gitignore                   # Excludes .env, virtualenvs, build artifacts, cache, audio dumps
+├── .gitignore                           # Excludes venvs, node_modules, weights, and .env files
 └── README.md
-
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Quick Start Guide
 
 ### Prerequisites
-- Python 3.11+
-- Node.js 18+
-- NVIDIA GPU with CUDA 12.2+ *(optional — CPU fallback supported)*
+- **Python 3.11+** installed
+- **Node.js 18+** & **npm** installed
+- Optional: CUDA-compatible GPU (defaults to high-performance CPU int8 execution)
 
-### 1. Clone the Repository
+### 1. Environment Configuration
 
-```bash
-git clone https://github.com/Harsh-Yadav029/Auralis.git
-cd Auralis
-```
-
-### 2. Configure API Keys
-
-Create `backend/.env`:
+Create `backend/.env` with your API keys:
 
 ```ini
-GROQ_API_KEY=your_groq_api_key_here
-CARTESIA_API_KEY=your_cartesia_api_key_here
+GROQ_API_KEY=gsk_your_groq_api_key_here
+CARTESIA_API_KEY=sk_car_your_cartesia_api_key_here
 ```
 
-Get your free keys:
-- **Groq** → [console.groq.com](https://console.groq.com) (Free — Llama 3.1 8B inference)
-- **Cartesia** → [play.cartesia.ai](https://play.cartesia.ai) (Free trial — Sonic streaming TTS)
+> **Obtain Credentials**:
+> - **Groq Cloud**: [https://console.groq.com](https://console.groq.com) *(Free tier available)*
+> - **Cartesia AI**: [https://play.cartesia.ai](https://play.cartesia.ai) *(Sonic voice synthesis)*
 
-### 3. Install & Run Each Microservice
+---
 
-**Backend WebRTC Gateway (Terminal 1):**
+### 2. Microservices Setup & Execution
+
+Run each service in a dedicated terminal window:
+
+#### Terminal 1: Backend Gateway (`:8000`)
 ```powershell
 cd backend
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 python -m src.main
-# → http://localhost:8000
 ```
+*Health Check*: `http://localhost:8000/health` → `{"status": "ok"}`
 
-**ML Audio Service (Terminal 2):**
+#### Terminal 2: ML Audio Service (`:8001`)
 ```powershell
 cd ml-service
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 python -m src.main
-# → http://localhost:8001
 ```
+*Health Check*: `http://localhost:8001/health` → `{"status": "ok"}`
 
-**React Frontend (Terminal 3):**
+#### Terminal 3: Frontend Web Dashboard (`:5173`)
 ```powershell
 cd frontend
 npm install
 npm run dev
-# → http://localhost:5173
+```
+*Access UI*: Open **`http://localhost:5173`** in Google Chrome or Microsoft Edge.
+
+---
+
+## 🧪 Operational Verification & Telemetry
+
+1. **Connect**: Click **"Start Simulation"** in the web dashboard and allow microphone access.
+2. **Audio Visualizer**: Observe the green waveform bars responding dynamically to your voice.
+3. **Voice Activity Detection**:
+   - Begin speaking: notice the indicator transitions to `SPEECH_START` and status turns to **Listening**.
+   - Stop speaking: after ~250ms silence, `SPEECH_END` fires, forwarding audio to Whisper and Wav2Vec2.
+4. **Emotion Detection**:
+   - Speak in a stressed or panicked voice: Wav2Vec2 categorizes emotion with high Arousal (>0.75) and negative Valence.
+   - The Emotion Radar updates the live coordinate dynamically.
+5. **Conversational De-escalation**:
+   - Groq injects the emotional metadata into the crisis prompt.
+   - Cartesia streams the response via WebRTC with turnaround latency under **800ms**.
+6. **Barge-In Interruption**:
+   - Interrupt the AI while it is speaking.
+   - Inbound VAD detects speech and cancels the playback queue in **< 150ms**.
+
+---
+
+## 📡 API & WebSocket Specifications
+
+### Gateway Signaling WebSocket (`backend:8000`)
+- **Endpoint**: `/ws/signaling`
+- **Protocol**: SDP Offer/Answer exchange and ICE Candidate negotiation over JSON text frames.
+
+```json
+// Example: SDP Offer from Client
+{
+  "type": "offer",
+  "sdp": "v=0\r\no=- 461173... IN IP4 127.0.0.1\r\n..."
+}
 ```
 
-### 4. Open the App
+### ML Audio Streaming WebSocket (`ml-service:8001`)
+- **Endpoint**: `/ws/stream`
+- **Inbound**: Raw 16kHz mono 16-bit PCM binary chunks.
+- **Outbound**: JSON status events (`SPEECH_START`, `SPEECH_END`, `TURN_COMPLETE`).
 
-Navigate to **`http://localhost:5173`** in Chrome and click **Start Simulation**.
-
----
-
-## 🧪 Testing the Pipeline
-
-| Test | Action | Expected Result |
-|:---|:---|:---|
-| Audio Visualizer | Speak into mic after connecting | Waveform bars animate in real-time |
-| Panicked Utterance | Click "Simulate Panicked Utterance" | Emotion meter spikes to PANIC, AI streams a calm de-escalation response |
-| Streaming TTS | Listen after simulation | Voice plays back within ~540ms |
-| Barge-in Interrupt | Click "Trigger Barge-in" while AI speaks | AI audio halts immediately (~112ms) |
-| Health Checks | `GET /health` on both services | `{"status":"ok"}` |
-
----
-
-## 🔑 Key Technical Decisions
-
-| Decision | Choice | Rationale |
-|:---|:---|:---|
-| LLM Inference | Groq Cloud LPU | Sub-90ms TTFT vs 400-600ms for local quantized models |
-| Streaming TTS | Cartesia Sonic | Fastest streaming WebSocket TTS API available |
-| ASR Engine | Faster-Whisper int8 | CTranslate2 runtime, 3× faster than OpenAI Whisper |
-| Audio Transport | WebRTC over UDP | Bypasses HTTP overhead; enables true full-duplex |
-| Emotion Model | Wav2Vec2 ONNX | Runs in parallel with ASR, adds ~40ms overhead only |
+```json
+// Example: TURN_COMPLETE Event
+{
+  "event": "TURN_COMPLETE",
+  "transcript": "Calm down, put the weapon on the ground.",
+  "emotion": {
+    "primary_label": "calm",
+    "confidence": 0.92,
+    "arousal": 0.51,
+    "valence": 0.20
+  },
+  "duration_ms": 2840.0
+}
+```
 
 ---
 
-## 🎯 Use Case: Crisis Negotiation Training
+## 🎯 Crisis Negotiation Domain Logic
 
-A trainee speaks in a panicked voice into their microphone. Auralis:
-- Detects the panic acoustically (Arousal: 92%, Valence: -80%)
-- Injects: *"User is in extreme panic/agitation — de-escalate with calm, short sentences"*
-- The AI responds in a measured, grounded negotiator voice within 540ms
-- If the trainee talks over the AI, the response halts in 112ms — just like a real human conversation
+Auralis is calibrated for simulated high-stress crisis scenarios using the **FBI Behavioral Change Stairway Model (BCSM)**:
+
+```
+[ Active Listening ] ──► [ Empathy ] ──► [ Rapport ] ──► [ Influence ] ──► [ Behavioral Change ]
+```
+
+When a trainee speaks with elevated agitation or panic:
+- **Acoustic Profiling**: Arousal is registered directly from pitch variation and energy envelopes.
+- **Dynamic System Injection**:
+  ```text
+  [CRITICAL SITUATIONAL UPDATE]
+  Trainee acoustic emotion: PANIC (Arousal: 0.91, Valence: -0.65).
+  Tactical Rule: De-escalate immediately. Use short sentences, slow pacing, and grounding questions.
+  ```
+- **Result**: The simulated subject reflects authentic human psychological de-escalation dynamics rather than scripted dialogue trees.
 
 ---
 
-## 📄 License
+## 🗺️ Roadmap & Development Status
 
-MIT License — built as a portfolio-grade, production-quality demonstration project.
+- [x] **Milestone 1**: Microservice Foundation & WebRTC Infrastructure (`aiortc`, 48k→16k Resampling).
+- [x] **Milestone 2**: Context Engine & Streaming Pipeline (Faster-Whisper, Wav2Vec2, Groq, Cartesia Sonic).
+- [x] **Milestone 3**: Frontend WebRTC Dashboard & Telemetry HUD (Web Audio API, 60fps Visualizer, Emotion Radar).
+- [ ] **Milestone 4**: Advanced Intelligence Layer
+  - [ ] FBI BCSM 5-stage automated negotiation scorecard.
+  - [ ] Dual-stream emotion fusion (text semantic valence vs acoustic prosody discrepancy).
+  - [ ] Dynamic TTS prosody modulation (pacing & pitch adaptation to trainee stress).
+- [ ] **Milestone 5**: Production Hardening & Docker Swarm / Kubernetes manifests.
 
 ---
 
-<div align="center">
-<sub>Built with FastAPI · aiortc · Faster-Whisper · Wav2Vec2 · Groq · Cartesia · React · WebRTC</sub>
-</div>
+## 📄 License & Attribution
+
+This project is released under the **MIT License**. Built with high-performance open-source tools: [FastAPI](https://fastapi.tiangolo.com), [aiortc](https://github.com/aiortc/aiortc), [Faster-Whisper](https://github.com/SYSTRAN/faster-whisper), [Transformers](https://github.com/huggingface/transformers), [Groq](https://groq.com), [Cartesia](https://cartesia.ai), and [React](https://react.dev).
