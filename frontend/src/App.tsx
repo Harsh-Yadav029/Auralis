@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { AuralisWebRTCClient } from './services/webrtc.service';
 import { AudioVisualizer } from './components/AudioVisualizer';
+import { BCSMStaircase, BCSMData } from './components/BCSMStaircase';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const ZapIcon = () => (
@@ -89,6 +90,7 @@ export const App: React.FC = () => {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [statusNotice, setStatusNotice] = useState<string | null>(null);
+  const [bcsmData, setBcsmData] = useState<BCSMData | null>(null);
 
   const webrtcClientRef = useRef<AuralisWebRTCClient | null>(null);
 
@@ -136,6 +138,9 @@ export const App: React.FC = () => {
         onLatencyUpdate: (ttfaMs: number) => {
           setTtfa(ttfaMs);
         },
+        onBCSMScore: (data: BCSMData) => {
+          setBcsmData(data);
+        },
         onAiText: (text: string) => {
           setAiResponse(text);
           setMessages(prev => {
@@ -150,6 +155,7 @@ export const App: React.FC = () => {
           setRemoteStream(stream);
         }
       });
+
 
       const micStream = await client.initialize();
       setLocalStream(micStream);
@@ -392,7 +398,11 @@ export const App: React.FC = () => {
               </div>
             </div>
 
+            {/* FBI BCSM Tactical Staircase Scorecard */}
+            <BCSMStaircase data={bcsmData} />
+
             {/* Conversation Log */}
+
             <div className="card" style={{ flex: 1, padding: '20px', display: 'flex', flexDirection: 'column', minHeight: '460px' }}>
               <div style={{ fontSize: '12px', fontWeight: '600', color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span>Conversation Log</span>

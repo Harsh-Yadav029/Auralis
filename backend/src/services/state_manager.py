@@ -84,6 +84,20 @@ class Orchestrator:
             self.state = "IDLE"
             self.emit_event("STATE_CHANGE", {"state": "IDLE"})
 
+            # Trigger asynchronous FBI BCSM Tactical Scoring in background (zero latency impact on audio loop)
+            if hasattr(self, "bcsm_scorer") and self.bcsm_scorer:
+                async def score_turn_background():
+                    try:
+                        score_result = await self.bcsm_scorer.evaluate_turn(
+                            trainee_transcript=transcript,
+                            acoustic_emotion=emotion_data,
+                            ai_response=""
+                        )
+                        self.emit_event("BCSM_SCORE", score_result)
+                    except Exception as err:
+                        logger.debug(f"Background BCSM scoring error: {err}")
+                asyncio.create_task(score_turn_background())
+
         self.current_task = asyncio.create_task(turn_pipeline())
         try:
             await self.current_task
@@ -91,4 +105,5 @@ class Orchestrator:
             logger.info("Pipeline task cancelled cleanly due to barge-in.")
             self.state = "IDLE"
             self.emit_event("STATE_CHANGE", {"state": "IDLE"})
+
 

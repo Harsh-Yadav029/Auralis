@@ -7,6 +7,7 @@ export interface WebRTCConfig {
   onLatencyUpdate: (ttfaMs: number) => void;
   onAiText?: (text: string) => void;
   onRemoteStream?: (stream: MediaStream) => void;
+  onBCSMScore?: (data: any) => void;
 }
 
 export class AuralisWebRTCClient {
@@ -63,6 +64,7 @@ export class AuralisWebRTCClient {
     if (data.event === "STATE_CHANGE") this.config.onStateChange(data.state);
     if (data.event === "LATENCY") this.config.onLatencyUpdate(data.ttfa);
     if (data.event === "AI_TEXT" && this.config.onAiText) this.config.onAiText(data.text);
+    if (data.event === "BCSM_SCORE" && this.config.onBCSMScore) this.config.onBCSMScore(data);
   }
 
   private setupDataChannel() {

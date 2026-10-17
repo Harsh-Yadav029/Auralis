@@ -12,6 +12,7 @@ from src.services.state_manager import Orchestrator
 from src.services.llm_service import GroqContextEngine
 from src.services.tts_service import CartesiaTTSService
 from src.services.ml_client import MLAudioClient
+from src.services.scoring_service import BCSMScorer
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("auralis.gateway")
@@ -28,6 +29,7 @@ app.add_middleware(
 
 llm_engine = GroqContextEngine()
 tts_engine = CartesiaTTSService()
+bcsm_scorer = BCSMScorer()
 
 @app.get("/health")
 async def health_check():
@@ -43,6 +45,8 @@ async def signaling_endpoint(websocket: WebSocket):
     pc.addTrack(outbound_track)
 
     orchestrator = Orchestrator(outbound_track=outbound_track, websocket=websocket)
+    orchestrator.bcsm_scorer = bcsm_scorer
+
     
     # Establish connection to ML Audio Microservice
     ws_ml_url = settings.ml_service_url.replace("http://", "ws://").replace("https://", "wss://").rstrip("/") + "/ws/stream"
