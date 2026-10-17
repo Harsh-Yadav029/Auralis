@@ -13,6 +13,8 @@ from src.services.llm_service import GroqContextEngine
 from src.services.tts_service import CartesiaTTSService
 from src.services.ml_client import MLAudioClient
 from src.services.scoring_service import BCSMScorer
+from src.services.fusion_engine import EmotionFusionEngine
+from src.services.scenario_manager import ScenarioManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("auralis.gateway")
@@ -30,10 +32,19 @@ app.add_middleware(
 llm_engine = GroqContextEngine()
 tts_engine = CartesiaTTSService()
 bcsm_scorer = BCSMScorer()
+fusion_engine = EmotionFusionEngine()
+scenario_manager = ScenarioManager()
 
 @app.get("/health")
 async def health_check():
     return {"status": "ok", "service": settings.app_name}
+
+@app.get("/api/v1/scenarios")
+async def get_scenarios():
+    return {
+        "active": scenario_manager.get_active_scenario(),
+        "scenarios": scenario_manager.list_scenarios()
+    }
 
 @app.websocket("/ws/signaling")
 async def signaling_endpoint(websocket: WebSocket):
@@ -46,6 +57,10 @@ async def signaling_endpoint(websocket: WebSocket):
 
     orchestrator = Orchestrator(outbound_track=outbound_track, websocket=websocket)
     orchestrator.bcsm_scorer = bcsm_scorer
+    orchestrator.fusion_engine = fusion_engine
+    orchestrator.scenario_manager = scenario_manager
+
+
 
     
     # Establish connection to ML Audio Microservice
@@ -114,6 +129,12 @@ async def signaling_endpoint(websocket: WebSocket):
 
             elif message["type"] == "barge_in":
                 orchestrator.handle_barge_in()
+
+            elif message["type"] == "change_scenario":
+                scenario_id = message.get("scenario_id", "bank_hostage")
+                active = scenario_manager.set_scenario(scenario_id)
+                orchestrator.emit_event("SCENARIO_UPDATED", active)
+
 
     except WebSocketDisconnect:
         logger.info("Signaling Client Disconnected")

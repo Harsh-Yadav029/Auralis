@@ -18,11 +18,11 @@
 - [x] Phase 3.1: React + Vite application (`frontend/`) with real AuralisWebRTCClient service, live mic capture, and WebRTC signaling.
 - [x] Phase 3.2: Live Web Audio API AnalyserNode canvas visualizers for mic and AI streams; Emotion Meter; Latency HUD; status notice banner.
 
-### Milestone 4: Advanced Intelligence Layer [IN_PROGRESS]
+### Milestone 4: Advanced Intelligence Layer [DONE]
 - [x] Phase 4.1: FBI BCSM tactical scoring engine (Active Listening -> Empathy -> Rapport -> Influence -> Behavioral Change).
-- [ ] Phase 4.2: Dual-stream emotion fusion (acoustic Arousal vs semantic LLM Valence discrepancy detection).
-- [ ] Phase 4.3: Emotion-conditioned TTS prosody (cadence and pitch F0 modulation based on trainee arousal).
-- [ ] Phase 4.4: Multi-scenario incident selector (Hostage / Bridge Jumper / Cyber Extortion).
+- [x] Phase 4.2: Dual-stream emotion fusion (acoustic Arousal vs semantic LLM Valence discrepancy detection).
+- [x] Phase 4.3: Emotion-conditioned TTS prosody (cadence and pitch F0 modulation based on trainee arousal).
+- [x] Phase 4.4: Multi-scenario incident selector (Hostage / Bridge Jumper / Cyber Extortion).
 
 ### Milestone 5: Production Infrastructure & Benchmarking
 - [ ] Phase 5.1: Docker Compose environment, multi-stage GPU Dockerfiles, and Coturn TURN server config.

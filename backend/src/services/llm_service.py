@@ -9,31 +9,41 @@ class GroqContextEngine:
         self.client = AsyncGroq(api_key=key) if key else None
         self.model = "llama-3.1-8b-instant"
 
-    def build_system_prompt(self, emotion_data: dict) -> str:
+    def build_system_prompt(self, emotion_data: dict, fusion_data: dict = None, scenario: dict = None) -> str:
         arousal = emotion_data.get('arousal', 0.5)
         valence = emotion_data.get('valence', 0.0)
         label = emotion_data.get('primary_label', 'unknown').upper()
 
-        return f"""You are an expert Crisis Negotiator de-escalating a hostage or emergency situation.
-USER EMOTION PARAMETERS:
+        fusion_notes = ""
+        if fusion_data and fusion_data.get("flag") != "ALIGNED":
+            fusion_notes = f"\n[PSYCHOLOGICAL DISSONANCE DETECTED]: {fusion_data.get('flag')} (Incongruence: {fusion_data.get('incongruence_score')})\nTactical Clue: {fusion_data.get('tactical_hint')}"
+
+        persona_block = scenario.get("prompt_personality", "") if scenario else "You are an armed suspect holding hostages in a bank vault."
+
+        return f"""CRISIS NEGOTIATION SIMULATOR PERSONA:
+{persona_block}
+
+TRAINEE VOICE ACOUSTIC TELEMETRY:
 - Acoustic Primary State: {label}
 - Arousal (Energy Level): {arousal:.2f} / 1.00
-- Valence (Tone Positivity): {valence:.2f} / 1.00
+- Valence (Tone Positivity): {valence:.2f} / 1.00{fusion_notes}
 
-DE-ESCALATION RULES:
-1. Keep your reply concise (1-2 calm sentences).
-2. Directly address their emotional state without arguing.
-3. Use steady, reassuring language to lower agitation."""
+ROLEPLAY GUIDELINES:
+1. Speak in first person as the suspect/subject. Keep replies concise (1-2 sentences).
+2. React authentically to the trainee's emotional tone and tactical de-escalation skills.
+3. If dissonance is flagged (e.g. suppressed panic), comment on their nervous or trembling voice."""
 
-    async def stream_deescalation_response(self, user_transcript: str, emotion_data: dict, history: list = None) -> AsyncGenerator[str, None]:
+    async def stream_deescalation_response(self, user_transcript: str, emotion_data: dict, history: list = None, fusion_data: dict = None, scenario: dict = None) -> AsyncGenerator[str, None]:
         if not self.client:
             # Fallback mock response if API key not present during dev test
             yield "I hear how overwhelmed you are right now. Take a breath with me. I am standing right here and nobody is going to hurt you."
             return
 
         history = history or []
-        system_prompt = self.build_system_prompt(emotion_data)
+        system_prompt = self.build_system_prompt(emotion_data, fusion_data, scenario)
         messages = [{"role": "system", "content": system_prompt}] + history + [{"role": "user", "content": user_transcript}]
+
+
 
         completion = await self.client.chat.completions.create(
             model=self.model,

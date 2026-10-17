@@ -58,14 +58,24 @@ class Orchestrator:
             "valence": emotion_data.get("valence", 0.0),
             "label": emotion_data.get("primary_label", "neutral")
         })
+
+        fusion_data = None
+        if hasattr(self, "fusion_engine") and self.fusion_engine:
+            fusion_data = self.fusion_engine.fuse_and_evaluate(transcript, emotion_data)
+            self.emit_event("FUSION", fusion_data)
         
+        active_scenario = None
+        if hasattr(self, "scenario_manager") and self.scenario_manager:
+            active_scenario = self.scenario_manager.get_active_scenario()
+
         t_start = time.perf_counter()
         first_audio_emitted = False
 
         async def turn_pipeline():
             nonlocal first_audio_emitted
-            async for clause in llm_engine.stream_deescalation_response(transcript, emotion_data, []):
+            async for clause in llm_engine.stream_deescalation_response(transcript, emotion_data, [], fusion_data, active_scenario):
                 self.emit_event("AI_TEXT", {"text": clause})
+
                 
                 async def on_audio_chunk(pcm_chunk):
                     nonlocal first_audio_emitted

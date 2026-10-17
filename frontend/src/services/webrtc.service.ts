@@ -8,6 +8,8 @@ export interface WebRTCConfig {
   onAiText?: (text: string) => void;
   onRemoteStream?: (stream: MediaStream) => void;
   onBCSMScore?: (data: any) => void;
+  onFusionUpdate?: (data: any) => void;
+  onScenarioUpdate?: (data: any) => void;
 }
 
 export class AuralisWebRTCClient {
@@ -65,6 +67,8 @@ export class AuralisWebRTCClient {
     if (data.event === "LATENCY") this.config.onLatencyUpdate(data.ttfa);
     if (data.event === "AI_TEXT" && this.config.onAiText) this.config.onAiText(data.text);
     if (data.event === "BCSM_SCORE" && this.config.onBCSMScore) this.config.onBCSMScore(data);
+    if (data.event === "FUSION" && this.config.onFusionUpdate) this.config.onFusionUpdate(data);
+    if (data.event === "SCENARIO_UPDATED" && this.config.onScenarioUpdate) this.config.onScenarioUpdate(data);
   }
 
   private setupDataChannel() {
@@ -114,7 +118,17 @@ export class AuralisWebRTCClient {
     }
   }
 
+  selectScenario(scenarioId: string) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({
+        type: "change_scenario",
+        scenario_id: scenarioId
+      }));
+    }
+  }
+
   triggerBargeIn() {
+
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ type: "barge_in" }));
     }

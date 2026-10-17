@@ -91,8 +91,61 @@ export const App: React.FC = () => {
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [statusNotice, setStatusNotice] = useState<string | null>(null);
   const [bcsmData, setBcsmData] = useState<BCSMData | null>(null);
+  const [fusionData, setFusionData] = useState<{
+    flag: string;
+    incongruence_score: number;
+    tactical_hint: string;
+  } | null>(null);
+  const [activeScenario, setActiveScenario] = useState<{
+    id: string;
+    title: string;
+    subject_name: string;
+    threat_level: string;
+    location: string;
+  }>({
+    id: 'bank_hostage',
+    title: 'Armed Bank Robbery',
+    subject_name: 'Mark Vance (34)',
+    threat_level: 'CRITICAL',
+    location: 'First Federal Savings, Downtown'
+  });
 
   const webrtcClientRef = useRef<AuralisWebRTCClient | null>(null);
+
+  const handleScenarioChange = (scenarioId: string) => {
+    if (scenarioId === 'bank_hostage') {
+      setActiveScenario({
+        id: 'bank_hostage',
+        title: 'Armed Bank Robbery',
+        subject_name: 'Mark Vance (34)',
+        threat_level: 'CRITICAL',
+        location: 'First Federal Savings, Downtown'
+      });
+    } else if (scenarioId === 'bridge_jumper') {
+      setActiveScenario({
+        id: 'bridge_jumper',
+        title: 'Suicide Intervention',
+        subject_name: 'David Cole (28)',
+        threat_level: 'HIGH',
+        location: 'Suspension Bridge Walkway, Pier 4'
+      });
+    } else if (scenarioId === 'cyber_extortion') {
+      setActiveScenario({
+        id: 'cyber_extortion',
+        title: 'Healthcare Ransomware Extortion',
+        subject_name: 'Cipher-X Syndicate',
+        threat_level: 'MODERATE',
+        location: 'Dark Web Voice Relay'
+      });
+    }
+    if (webrtcClientRef.current) {
+      webrtcClientRef.current.selectScenario(scenarioId);
+    }
+    setMessages([]);
+    setBcsmData(null);
+    setFusionData(null);
+  };
+
 
   const getTimestamp = () => new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
@@ -140,6 +193,9 @@ export const App: React.FC = () => {
         },
         onBCSMScore: (data: BCSMData) => {
           setBcsmData(data);
+        },
+        onFusionUpdate: (data: any) => {
+          setFusionData(data);
         },
         onAiText: (text: string) => {
           setAiResponse(text);
@@ -255,10 +311,28 @@ export const App: React.FC = () => {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '8px', background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(51,65,85,0.5)', fontSize: '12px', color: '#94a3b8' }}>
+            {/* Scenario Selector Dropdown */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(15,23,42,0.85)', padding: '4px 10px', borderRadius: '10px', border: '1px solid rgba(56,189,248,0.3)' }}>
               <ShieldIcon />
-              <span>Crisis Negotiation Simulator</span>
+              <select
+                value={activeScenario.id}
+                onChange={(e) => handleScenarioChange(e.target.value)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#38bdf8',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="bank_hostage" style={{ background: '#0f172a', color: '#e2e8f0' }}>Bank Hostage (Mark Vance)</option>
+                <option value="bridge_jumper" style={{ background: '#0f172a', color: '#e2e8f0' }}>Suicide Intervention (David Cole)</option>
+                <option value="cyber_extortion" style={{ background: '#0f172a', color: '#e2e8f0' }}>Ransomware Call (Cipher-X)</option>
+              </select>
             </div>
+
             {isConnected ? (
               <button className="btn-danger" onClick={stopSession}>
                 <PhoneOffIcon /> End Session
@@ -346,6 +420,32 @@ export const App: React.FC = () => {
                     <div className="progress-fill" style={{ width: `${((valence + 1) / 2) * 100}%`, background: 'linear-gradient(90deg,#6366f1,#22d3ee)' }} />
                   </div>
                 </div>
+
+                {/* Dual-Stream Emotion Fusion Alert */}
+                {fusionData && fusionData.flag !== 'ALIGNED' && (
+                  <div style={{
+                    marginTop: '8px',
+                    padding: '8px 10px',
+                    borderRadius: '8px',
+                    background: 'rgba(239, 68, 68, 0.15)',
+                    border: '1px solid rgba(239, 68, 68, 0.35)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '10px', fontWeight: 700, color: '#f87171', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        ⚡ Dissonance: {fusionData.flag.replace('_', ' ')}
+                      </span>
+                      <span style={{ fontSize: '10px', color: '#fca5a5', fontFamily: 'monospace' }}>
+                        {(fusionData.incongruence_score * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '10px', color: '#cbd5e1', lineHeight: '1.3' }}>
+                      {fusionData.tactical_hint}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
