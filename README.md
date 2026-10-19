@@ -8,7 +8,7 @@
 
 <p>
   <strong>A production-grade, sub-800ms full-duplex voice AI architecture for high-stakes Crisis Negotiation Simulation.</strong><br/>
-  Combines ultra-low-latency WebRTC streaming, acoustic emotion profiling (Arousal & Valence), Groq LPU LLM inference, and instantaneous barge-in audio playback.
+  Combines ultra-low-latency WebRTC streaming, acoustic emotion profiling (Arousal & Valence), Groq LPU LLM inference, dual-stream emotion fusion, FBI BCSM tactical scoring, and emotion-conditioned dynamic speech synthesis.
 </p>
 
 [![Python](https://img.shields.io/badge/Python-3.11+-3776ab?style=flat-square&logo=python&logoColor=white)](https://python.org)
@@ -36,10 +36,14 @@
   - [1. Environment Configuration](#1-environment-configuration)
   - [2. Microservices Setup & Execution](#2-microservices-setup--execution)
 - [Operational Verification & Telemetry](#-operational-verification--telemetry)
+- [Crisis Negotiation Intelligence Layer](#-crisis-negotiation-intelligence-layer)
+  - [1. FBI BCSM Tactical Scoring Engine](#1-fbi-bcsm-tactical-scoring-engine)
+  - [2. Dual-Stream Emotion Fusion](#2-dual-stream-emotion-fusion)
+  - [3. Emotion-Conditioned Dynamic Prosody](#3-emotion-conditioned-dynamic-prosody)
+  - [4. Multi-Scenario Incident Selector](#4-multi-scenario-incident-selector)
 - [API & WebSocket Specifications](#-api--websocket-specifications)
-- [Crisis Negotiation Domain Logic](#-crisis-negotiation-domain-logic)
 - [Roadmap & Development Status](#-roadmap--development-status)
-- [License & Contributions](#-license--contributions)
+- [License & Attribution](#-license--attribution)
 
 ---
 
@@ -50,8 +54,10 @@ Conversational speech systems frequently rely on cascading REST APIs (`STT → L
 **Auralis** rearchitects conversational voice AI into an event-driven, decoupled microservice pipeline:
 1. **Low-Latency Ingestion**: Streams client audio over **WebRTC (Opus/UDP)** straight to an async gateway.
 2. **Parallel Speech & Emotion Analytics**: Audio frames are fed directly to **Faster-Whisper** and **Wav2Vec2**, yielding transcripts alongside multi-dimensional emotion vectors (`Arousal` & `Valence`).
-3. **Adaptive Emotion Conditioning**: The LLM persona (Groq Llama 3.1 8B) dynamically ingests affective cues, tuning its tactical stance in real time.
-4. **Sub-150ms Full-Duplex Interruption (Barge-in)**: Cancels downstream TTS generation and clears audio queues immediately when user speech resumes.
+3. **Dual-Stream Emotion Fusion**: Detects cognitive dissonance between semantic text sentiment and acoustic vocal tremors to expose bluffing or suppressed panic.
+4. **Adaptive Emotion Conditioning**: The LLM persona (Groq Llama 3.1 8B) dynamically ingests affective cues and scenario constraints to react like a real human in crisis.
+5. **Sub-150ms Full-Duplex Interruption (Barge-in)**: Cancels downstream TTS generation and clears audio queues immediately when trainee speech resumes.
+6. **FBI BCSM Tactical Scoring**: Asynchronously evaluates negotiation skills and guides the trainee with real-time tactical feedback.
 
 ---
 
@@ -59,8 +65,11 @@ Conversational speech systems frequently rely on cascading REST APIs (`STT → L
 
 - **True Full-Duplex WebRTC Streaming**: Eliminates HTTP polling or monolithic WebSockets using peer-to-peer UDP audio tracks with `aiortc`.
 - **Acoustic Emotion Radar**: Calculates Valence (-1.0 to +1.0) and Arousal (0.0 to 1.0) directly from speech sound waves without depending on text sentiment.
+- **Dual-Stream Emotion Fusion**: Detects when a speaker says *"I'm totally calm"* while vocal acoustics register extreme terror (`SUPPRESSED_PANIC`).
+- **FBI BCSM Live Scorecard**: Real-time 5-stage stairway assessment tracking *Active Listening, Empathy, Rapport, Influence,* and *Behavioral Change*.
+- **Emotion-Conditioned Dynamic Prosody**: Cartesia TTS automatically modulates cadence (slows to `0.88x` and lowers pitch) when the trainee panics to physiologically ground the conversation.
+- **Multi-Scenario Incident Selector**: Dynamic switching between *Bank Hostage*, *Suicide Intervention*, and *Healthcare Ransomware Extortion* personas.
 - **Sub-150ms Barge-In Cancellation**: Async event triggers abort ongoing LLM tokens and flush outbound audio buffers the millisecond trainee speech starts.
-- **Enterprise Crisis Persona Engine**: Pre-configured with tactical de-escalation behavior based on the FBI Behavioral Change Stairway Model (BCSM).
 - **60fps Real-Time Audio Telemetry**: React Web Audio API interface measuring live FFT frequency bars, emotional quadrant shifts, and end-to-end TTFA (Time-To-First-Audio).
 
 ---
@@ -73,10 +82,12 @@ Conversational speech systems frequently rely on cascading REST APIs (`STT → L
 | **VAD Detection** | Silero VAD (30ms chunks + 250ms hangover) | `~80 ms` | `< 100 ms` |
 | **Speech-to-Text** | Faster-Whisper `distil-small.en` (int8 CTranslate2) | `~120 ms` | `< 200 ms` |
 | **Acoustic Emotion** | Wav2Vec2 ONNX (computed concurrently with ASR) | `~40 ms` (parallel) | `< 60 ms` |
+| **Emotion Fusion** | Dual-Stream Incongruence Engine | `< 1 ms` (instant) | `< 5 ms` |
 | **LLM Inference** | Groq LPU (Llama 3.1 8B Instant) | `~80 ms` (TTFT) | `< 120 ms` |
 | **Streaming Synthesis** | Cartesia Sonic WebSocket API (PCM chunks) | `~150 ms` (TTFB) | `< 200 ms` |
 | **Total Turnaround (TTFA)** | **End-to-End Trainee Voice to AI Response** | **~540 ms** | **< 800 ms** ✅ |
 | **Barge-in Interruption** | **Outbound Audio Stream Cancellation** | **~112 ms** | **< 150 ms** ✅ |
+| **BCSM Tactical Scoring** | Async FBI Evaluator Background Task | `~200 ms` (async) | **0 ms blocking** ✅ |
 
 ---
 
@@ -109,13 +120,19 @@ Conversational speech systems frequently rely on cascading REST APIs (`STT → L
 │  └─────────────────┬──────────────────────────────┬───────────────────────┘          │
 │                    │                              │                                  │
 │                    ▼                              ▼                                  │
-│       [ Orchestrator / StateManager ] (Prompt Construction & Turn Lock)              │
+│       [ Dual-Stream Emotion Fusion ] ──► Detects Incongruence / Suppressed Panic     │
 │                    │                                                                 │
-│                    ▼ (HTTP/REST Streaming)                                           │
-│       [ Groq Cloud LPU Engine ] ──► Llama 3.1 8B Emotion-Injected Generation         │
-│                    │                                                                 │
-│                    ▼ (Chunked Text Stream)                                           │
-│       [ Cartesia Sonic WebSocket Client ] ──► Streaming 24kHz / 48kHz Audio Chunks   │
+│                    ├──────────────────────────────────────────────────────┐          │
+│                    ▼                                                      ▼ (Async)  │
+│       [ Groq LPU Engine ] (Llama 3.1 8B)                     [ FBI BCSM Scorer ]     │
+│       Injected with Scenario Dossier + Emotion Context        5-Stage Staircase      │
+│                    │                                          Tactical Coaching      │
+│                    ▼ (Clause Streaming)                                   │          │
+│       [ Dynamic Prosody Controller ]                                      ▼          │
+│       Modulates Cartesia Speed (0.88x–1.05x) and Pitch       Dispatches Scorecard    │
+│                    │                                         to WebRTC DataChannel   │
+│                    ▼                                                                 │
+│       [ Cartesia Sonic WebSocket ] ──► Streaming PCM16 Chunks                        │
 │                    │                                                                 │
 │                    ▼ (CustomOutboundAudioTrack)                                      │
 └────────────────────┴─────────────────────────────────────────────────────────────────┘
@@ -125,12 +142,12 @@ Conversational speech systems frequently rely on cascading REST APIs (`STT → L
 
 ## 📦 Microservice Ecosystem
 
-The architecture is partitioned into 3 isolated services:
+The architecture is partitioned into 3 isolated, decoupled services:
 
 | Service | Port | Tech Stack | Primary Responsibility |
 |:---|:---:|:---|:---|
-| **`frontend/`** | `5173` | React 18, Vite, TypeScript, Tailwind | Trainee negotiation dashboard, WebRTC signaling client, real-time waveform & emotion radar visualizer. |
-| **`backend/`** | `8000` | FastAPI, `aiortc`, WebSockets, Groq SDK | Signaling server, WebRTC peer connection manager, pipeline orchestrator, and Cartesia TTS streaming bridge. |
+| **`frontend/`** | `5173` | React 18, Vite, TypeScript, Tailwind | Trainee negotiation dashboard, WebRTC signaling client, BCSM 5-stage staircase, dual-stream dissonance indicator, waveform visualizers. |
+| **`backend/`** | `8000` | FastAPI, `aiortc`, WebSockets, Groq SDK | Signaling server, WebRTC peer connection manager, pipeline orchestrator, BCSM scorer, emotion fusion engine, scenario manager, and Cartesia TTS bridge. |
 | **`ml-service/`** | `8001` | FastAPI, PyTorch, Faster-Whisper, Transformers | Real-time speech inference, Silero Voice Activity Detection, and Wav2Vec2 Arousal/Valence classifier. |
 
 ---
@@ -147,8 +164,11 @@ Auralis/
 │   │       ├── webrtc_service.py        # 48kHz->16kHz resampler & CustomOutboundAudioTrack
 │   │       ├── ml_client.py             # Persistent WebSocket bridge to ML Audio Service
 │   │       ├── llm_service.py           # Groq Llama 3.1 emotion prompt injection client
-│   │       ├── tts_service.py           # Cartesia Sonic streaming TTS WebSocket handler
-│   │       └── state_manager.py         # Async state orchestrator & <150ms barge-in canceller
+│   │       ├── tts_service.py           # Cartesia Sonic streaming TTS & dynamic prosody
+│   │       ├── state_manager.py         # Async state orchestrator & <150ms barge-in canceller
+│   │       ├── scoring_service.py       # FBI BCSM 5-stage automated negotiation evaluator
+│   │       ├── fusion_engine.py         # Dual-stream semantic vs acoustic incongruence engine
+│   │       └── scenario_manager.py      # Multi-scenario crisis persona dossiers
 │   ├── requirements.txt
 │   └── .env                             # Secret API Keys (GROQ_API_KEY, CARTESIA_API_KEY)
 │
@@ -170,13 +190,14 @@ Auralis/
 │   │   └── components/
 │   │       ├── AudioVisualizer.tsx      # 60fps Web Audio API waveform canvas
 │   │       ├── EmotionMeter.tsx         # 2D quadrant emotion meter (Arousal vs Valence)
+│   │       ├── BCSMStaircase.tsx        # FBI BCSM 5-stage tactical scorecard
 │   │       └── LatencyHUD.tsx           # Live latency gauge (TTFA, VAD, Barge-in)
 │   ├── package.json
 │   └── vite.config.ts
 │
 ├── infra/                               # Deployment & Infrastructure
 │   ├── docker/
-│   │   └── docker-compose.yml           # Multi-container local production environment
+│   │   └── docker-compose.yml           # Multi-container orchestration
 │   └── coturn/
 │       └── turnserver.conf              # STUN/TURN configuration for enterprise NAT traversal
 │
@@ -249,19 +270,51 @@ npm run dev
 ## 🧪 Operational Verification & Telemetry
 
 1. **Connect**: Click **"Start Simulation"** in the web dashboard and allow microphone access.
-2. **Audio Visualizer**: Observe the green waveform bars responding dynamically to your voice.
+2. **Select Scenario**: Choose from *Bank Hostage*, *Suicide Intervention*, or *Ransomware Call* in the header.
 3. **Voice Activity Detection**:
    - Begin speaking: notice the indicator transitions to `SPEECH_START` and status turns to **Listening**.
    - Stop speaking: after ~250ms silence, `SPEECH_END` fires, forwarding audio to Whisper and Wav2Vec2.
-4. **Emotion Detection**:
-   - Speak in a stressed or panicked voice: Wav2Vec2 categorizes emotion with high Arousal (>0.75) and negative Valence.
-   - The Emotion Radar updates the live coordinate dynamically.
-5. **Conversational De-escalation**:
-   - Groq injects the emotional metadata into the crisis prompt.
-   - Cartesia streams the response via WebRTC with turnaround latency under **800ms**.
-6. **Barge-In Interruption**:
-   - Interrupt the AI while it is speaking.
-   - Inbound VAD detects speech and cancels the playback queue in **< 150ms**.
+4. **FBI BCSM Scorecard**:
+   - The 5-stage progress indicator updates dynamically.
+   - Four skill bars (*Active Listening*, *Emotion Labeling*, *Mirroring*, *Rapport*) evaluate your tactical technique.
+   - The **Tactical Coach** banner suggests the ideal next phrase.
+5. **Dual-Stream Dissonance Test**:
+   - Say *"I'm totally calm and in control"* in a panicked or hurried voice.
+   - A `⚡ Dissonance: SUPPRESSED PANIC` badge appears, and the AI calls out your trembling tone.
+6. **Dynamic Prosody**:
+   - When you are agitated, listen to the AI speak in a noticeably slower, deeper, grounding voice.
+7. **Barge-In Interruption**:
+   - Interrupt the AI mid-sentence: playback immediately halts in **< 150ms**.
+
+---
+
+## 🎯 Crisis Negotiation Intelligence Layer
+
+### 1. FBI BCSM Tactical Scoring Engine
+Implemented based on the **Behavioral Change Stairway Model** developed by the FBI Crisis Negotiation Unit:
+
+$$\text{Active Listening} \longrightarrow \text{Empathy} \longrightarrow \text{Rapport} \longrightarrow \text{Influence} \longrightarrow \text{Behavioral Change}$$
+
+- **Non-blocking Execution**: Evaluated asynchronously in the background (`scoring_service.py`), adding **0ms** to audio turnaround.
+- **Sub-skill Analysis**: Scores open-ended questioning, emotional labeling, mirroring, and rapport building from 0% to 100%.
+
+### 2. Dual-Stream Emotion Fusion
+Addresses **cognitive dissonance** where spoken text contradicts vocal soundwaves:
+- Acoustic Vector: $A_{\text{arousal}} \in [0, 1]$, $A_{\text{valence}} \in [-1, 1]$ (Wav2Vec2)
+- Lexical Sentiment: $S_{\text{valence}} \in [-1, 1]$
+- Incongruence Metric:
+  $$\Delta_{\text{affect}} = |S_{\text{valence}} - A_{\text{valence}}| \times A_{\text{arousal}}$$
+- Flags: `SUPPRESSED_PANIC`, `MASKED_VULNERABILITY`, and `FALSE_COMPLIANCE`.
+
+### 3. Emotion-Conditioned Dynamic Prosody
+Psychological de-escalation requires **vocal pacing**:
+- Trainee Panic ($A_{\text{arousal}} \ge 0.75$): TTS slows down to `0.88x` speed with grounded, low-pitch prosody (`calm:highest`).
+- Trainee Disengagement ($A_{\text{arousal}} \le 0.30$): TTS speeds up to `1.05x` with attentive, engaging delivery.
+
+### 4. Multi-Scenario Incident Selector
+1. **Armed Bank Robbery (`Mark Vance`)**: Armed subject cornered in bank vault with 4 hostages; highly volatile, sensitive to threats.
+2. **Suicide Intervention (`David Cole`)**: Subject standing on bridge outer railing; depressed, requires deep empathy and active listening over logic.
+3. **Healthcare Ransomware Extortion (`Cipher-X`)**: Cold, calculating cyber syndicate demanding BTC payment before hospital ICU blackout.
 
 ---
 
@@ -272,10 +325,10 @@ npm run dev
 - **Protocol**: SDP Offer/Answer exchange and ICE Candidate negotiation over JSON text frames.
 
 ```json
-// Example: SDP Offer from Client
+// Example: Change Scenario Event
 {
-  "type": "offer",
-  "sdp": "v=0\r\no=- 461173... IN IP4 127.0.0.1\r\n..."
+  "type": "change_scenario",
+  "scenario_id": "bridge_jumper"
 }
 ```
 
@@ -299,25 +352,15 @@ npm run dev
 }
 ```
 
----
-
-## 🎯 Crisis Negotiation Domain Logic
-
-Auralis is calibrated for simulated high-stress crisis scenarios using the **FBI Behavioral Change Stairway Model (BCSM)**:
-
-```
-[ Active Listening ] ──► [ Empathy ] ──► [ Rapport ] ──► [ Influence ] ──► [ Behavioral Change ]
-```
-
-When a trainee speaks with elevated agitation or panic:
-- **Acoustic Profiling**: Arousal is registered directly from pitch variation and energy envelopes.
-- **Dynamic System Injection**:
-  ```text
-  [CRITICAL SITUATIONAL UPDATE]
-  Trainee acoustic emotion: PANIC (Arousal: 0.91, Valence: -0.65).
-  Tactical Rule: De-escalate immediately. Use short sentences, slow pacing, and grounding questions.
-  ```
-- **Result**: The simulated subject reflects authentic human psychological de-escalation dynamics rather than scripted dialogue trees.
+### WebRTC DataChannel Telemetry Events
+| Event Name | Dispatched When | Payload Details |
+|:---|:---|:---|
+| `TRANSCRIPT` | ASR finishes transcription | `{"text": "..."}` |
+| `EMOTION` | Acoustic classifier finishes | `{"arousal": 0.82, "valence": -0.65, "label": "panic"}` |
+| `FUSION` | Discrepancy detected | `{"flag": "SUPPRESSED_PANIC", "incongruence_score": 0.95}` |
+| `BCSM_SCORE` | Tactical evaluation completed | `{"stage": 2, "stage_name": "Empathy", "scores": {...}}` |
+| `LATENCY` | Audio playback begins | `{"ttfa": 534.2}` |
+| `STATE_CHANGE` | Session state transitions | `{"state": "LISTENING" \| "THINKING" \| "SPEAKING" \| "INTERRUPTED"}` |
 
 ---
 
@@ -326,11 +369,14 @@ When a trainee speaks with elevated agitation or panic:
 - [x] **Milestone 1**: Microservice Foundation & WebRTC Infrastructure (`aiortc`, 48k→16k Resampling).
 - [x] **Milestone 2**: Context Engine & Streaming Pipeline (Faster-Whisper, Wav2Vec2, Groq, Cartesia Sonic).
 - [x] **Milestone 3**: Frontend WebRTC Dashboard & Telemetry HUD (Web Audio API, 60fps Visualizer, Emotion Radar).
-- [ ] **Milestone 4**: Advanced Intelligence Layer
-  - [ ] FBI BCSM 5-stage automated negotiation scorecard.
-  - [ ] Dual-stream emotion fusion (text semantic valence vs acoustic prosody discrepancy).
-  - [ ] Dynamic TTS prosody modulation (pacing & pitch adaptation to trainee stress).
-- [ ] **Milestone 5**: Production Hardening & Docker Swarm / Kubernetes manifests.
+- [x] **Milestone 4**: Advanced Intelligence Layer
+  - [x] FBI BCSM 5-stage automated negotiation scorecard & tactical coach.
+  - [x] Dual-stream emotion fusion (text semantic valence vs acoustic prosody discrepancy).
+  - [x] Dynamic TTS prosody modulation (pacing & pitch adaptation to trainee stress).
+  - [x] Multi-scenario crisis incident selector (Bank Hostage, Bridge Jumper, Cyber Extortion).
+- [ ] **Milestone 5**: Production Infrastructure & Benchmarking
+  - [ ] Docker Compose environment & GPU Dockerfiles.
+  - [ ] Automated end-to-end TTFA latency measurement harness.
 
 ---
 
