@@ -15,11 +15,11 @@ export interface WebRTCConfig {
 export class AuralisWebRTCClient {
   private pc: RTCPeerConnection | null = null;
   private ws: WebSocket | null = null;
-  private dataChannel: RTCDataChannel | null = null;
   private localStream: MediaStream | null = null;
+  private dataChannel: RTCDataChannel | null = null;
   private remoteAudioElement: HTMLAudioElement | null = null;
 
-  constructor(private config: WebRTCConfig) {}
+  constructor(private config: WebRTCConfig) { }
 
   async initialize(): Promise<MediaStream> {
     this.localStream = await navigator.mediaDevices.getUserMedia({
