@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { AuralisWebRTCClient } from './services/webrtc.service';
 import { AudioVisualizer } from './components/AudioVisualizer';
 import { BCSMStaircase, BCSMData } from './components/BCSMStaircase';
+import { ScenarioBriefingCard } from './components/ScenarioBriefingCard';
+import { EmotionQuadrantRadar } from './components/EmotionQuadrantRadar';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const ZapIcon = () => (
@@ -353,115 +355,98 @@ export const App: React.FC = () => {
         )}
 
         {/* ── Main Layout ── */}
-        <main style={{ flex: 1, display: 'grid', gridTemplateColumns: '320px 1fr', gap: '20px', padding: '20px 24px', maxWidth: '1400px', width: '100%', margin: '0 auto', alignItems: 'start' }}>
+        <main style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px', padding: '20px 24px', maxWidth: '1440px', width: '100%', margin: '0 auto' }}>
 
-          {/* ── Left Sidebar ── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Top Mission Briefing Dossier */}
+          <ScenarioBriefingCard
+            scenarioId={activeScenario.id}
+            onScenarioSelect={handleScenarioChange}
+            isConnected={isConnected}
+          />
 
-            {/* Audio Visualizer Card */}
-            <div className="card" style={{ padding: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <ActivityIcon />
-                  <span style={{ fontSize: '12px', fontWeight: '600', color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Live Audio Stream</span>
+          <div style={{ display: 'grid', gridTemplateColumns: '340px 1fr', gap: '20px', alignItems: 'start' }}>
+
+            {/* ── Left Sidebar ── */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+              {/* Audio Visualizer Card */}
+              <div className="card" style={{ padding: '18px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <ActivityIcon />
+                    <span style={{ fontSize: '12px', fontWeight: '600', color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Live Audio Stream</span>
+                  </div>
+                  {isConnected && <PulseDot color="#22d3ee" />}
                 </div>
-                {isConnected && <PulseDot color="#22d3ee" />}
-              </div>
 
-              {/* User waveform */}
-              <div style={{ marginBottom: '12px' }}>
-                <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px' }}>You (Microphone Live Stream)</div>
-                {localStream ? (
-                  <AudioVisualizer stream={localStream} color="#38bdf8" height={48} />
-                ) : (
-                  <WaveformBars active={isConnected && sessionState === 'LISTENING'} color="linear-gradient(90deg,#f87171,#fb923c)" />
-                )}
-              </div>
-
-              {/* AI waveform */}
-              <div>
-                <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px' }}>Auralis AI Response</div>
-                {remoteStream ? (
-                  <AudioVisualizer stream={remoteStream} color="#34d399" height={48} />
-                ) : (
-                  <WaveformBars active={sessionState === 'SPEAKING'} color="linear-gradient(90deg,#06b6d4,#3b82f6)" />
-                )}
-              </div>
-            </div>
-
-            {/* Emotion Meter Card */}
-            <div className="card" style={{ padding: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <BrainIcon />
-                  <span style={{ fontSize: '12px', fontWeight: '600', color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Acoustic Emotion</span>
+                {/* User waveform */}
+                <div style={{ marginBottom: '12px' }}>
+                  <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px' }}>You (Microphone Live Stream)</div>
+                  {localStream ? (
+                    <AudioVisualizer stream={localStream} color="#38bdf8" height={48} />
+                  ) : (
+                    <WaveformBars active={isConnected && sessionState === 'LISTENING'} color="linear-gradient(90deg,#f87171,#fb923c)" />
+                  )}
                 </div>
-                <div style={{ padding: '3px 10px', borderRadius: '999px', background: badge.bg, border: `1px solid ${badge.border}`, fontSize: '11px', fontWeight: '700', color: badge.text, letterSpacing: '0.06em' }}>
-                  {badge.label}
-                </div>
-              </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {/* AI waveform */}
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '12px', color: '#94a3b8' }}>Arousal (Energy)</span>
-                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#f87171', fontFamily: 'monospace' }}>{(arousal * 100).toFixed(0)}%</span>
-                  </div>
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: `${arousal * 100}%`, background: 'linear-gradient(90deg,#f59e0b,#ef4444)' }} />
-                  </div>
+                  <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px' }}>Auralis AI Response</div>
+                  {remoteStream ? (
+                    <AudioVisualizer stream={remoteStream} color="#34d399" height={48} />
+                  ) : (
+                    <WaveformBars active={sessionState === 'SPEAKING'} color="linear-gradient(90deg,#06b6d4,#3b82f6)" />
+                  )}
                 </div>
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '12px', color: '#94a3b8' }}>Valence (Positivity)</span>
-                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#22d3ee', fontFamily: 'monospace' }}>{(((valence + 1) / 2) * 100).toFixed(0)}%</span>
-                  </div>
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: `${((valence + 1) / 2) * 100}%`, background: 'linear-gradient(90deg,#6366f1,#22d3ee)' }} />
-                  </div>
-                </div>
+              </div>
 
-                {/* Dual-Stream Emotion Fusion Alert */}
-                {fusionData && fusionData.flag !== 'ALIGNED' && (
-                  <div style={{
-                    marginTop: '8px',
-                    padding: '8px 10px',
-                    borderRadius: '8px',
-                    background: 'rgba(239, 68, 68, 0.15)',
-                    border: '1px solid rgba(239, 68, 68, 0.35)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '4px'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '10px', fontWeight: 700, color: '#f87171', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        ⚡ Dissonance: {fusionData.flag.replace('_', ' ')}
-                      </span>
-                      <span style={{ fontSize: '10px', color: '#fca5a5', fontFamily: 'monospace' }}>
-                        {(fusionData.incongruence_score * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                    <span style={{ fontSize: '10px', color: '#cbd5e1', lineHeight: '1.3' }}>
-                      {fusionData.tactical_hint}
+              {/* 2D Circumplex Emotion Radar */}
+              <EmotionQuadrantRadar
+                arousal={arousal}
+                valence={valence}
+                primaryLabel={emotionLabel}
+              />
+
+              {/* Dual-Stream Emotion Fusion Alert Banner */}
+              {fusionData && fusionData.flag !== 'ALIGNED' && (
+                <div style={{
+                  padding: '12px 14px',
+                  borderRadius: '12px',
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  border: '1px solid rgba(239, 68, 68, 0.4)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                  boxShadow: '0 4px 16px rgba(239, 68, 68, 0.2)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#f87171', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      ⚡ DISSONANCE: {fusionData.flag.replace('_', ' ')}
+                    </span>
+                    <span style={{ fontSize: '11px', color: '#fca5a5', fontFamily: 'monospace', fontWeight: 700 }}>
+                      {(fusionData.incongruence_score * 100).toFixed(0)}%
                     </span>
                   </div>
-                )}
+                  <span style={{ fontSize: '11px', color: '#cbd5e1', lineHeight: '1.4' }}>
+                    {fusionData.tactical_hint}
+                  </span>
+                </div>
+              )}
+
+              {/* Simulation Controls */}
+              <div className="card" style={{ padding: '18px' }}>
+                <div style={{ fontSize: '12px', fontWeight: '600', color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '12px' }}>Tactical Controls</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <button className="btn-action btn-amber" disabled={!isConnected} onClick={simulatePanic}>
+                    🎙 Simulate Panicked Utterance
+                  </button>
+                  <button className="btn-action btn-rose" disabled={!isConnected} onClick={triggerBargeIn}>
+                    ✋ Trigger Barge-in Interrupt
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Simulation Controls */}
-            <div className="card" style={{ padding: '20px' }}>
-              <div style={{ fontSize: '12px', fontWeight: '600', color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '12px' }}>Test Controls</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <button className="btn-action btn-amber" disabled={!isConnected} onClick={simulatePanic}>
-                  🎙 Simulate Panicked Utterance
-                </button>
-                <button className="btn-action btn-rose" disabled={!isConnected} onClick={triggerBargeIn}>
-                  ✋ Trigger Barge-in Interrupt
-                </button>
-              </div>
-            </div>
-          </div>
 
           {/* ── Right Panel ── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minHeight: '0' }}>
@@ -555,8 +540,9 @@ export const App: React.FC = () => {
               </div>
             </div>
           </div>
-        </main>
-      </div>
-    </>
-  );
+        </div>
+      </main>
+    </div>
+  </>
+);
 };
