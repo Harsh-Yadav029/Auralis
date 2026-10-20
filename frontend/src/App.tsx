@@ -1,548 +1,639 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AuralisWebRTCClient } from './services/webrtc.service';
 import { AudioVisualizer } from './components/AudioVisualizer';
 import { BCSMStaircase, BCSMData } from './components/BCSMStaircase';
 import { ScenarioBriefingCard } from './components/ScenarioBriefingCard';
 import { EmotionQuadrantRadar } from './components/EmotionQuadrantRadar';
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
+// ─── Inline SVG Icons ─────────────────────────────────────────────────────────
 const ZapIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
   </svg>
 );
-const MicIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+const MicIcon = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
   </svg>
 );
-const MicOffIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
-  </svg>
-);
-const BrainIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-1.14Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-1.14Z"/>
+const PhoneOffIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.42 19.42 0 0 1 4.43 9.88a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.34 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.32 8.91"/><line x1="23" y1="1" x2="1" y2="23"/>
   </svg>
 );
 const ShieldIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
   </svg>
 );
 const ActivityIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
   </svg>
 );
-const PhoneOffIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.42 19.42 0 0 1 4.43 9.88a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.34 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.32 8.91"/><line x1="23" y1="1" x2="1" y2="23"/>
+const BrainIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-1.14Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-1.14Z"/>
+  </svg>
+);
+const ChevronRightIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 18 15 12 9 6"/>
+  </svg>
+);
+const XIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
   </svg>
 );
 
-// ─── Waveform Visualizer ──────────────────────────────────────────────────────
-const WaveformBars: React.FC<{ active: boolean; color: string }> = ({ active, color }) => {
-  const [bars, setBars] = useState<number[]>(Array(28).fill(0).map(() => Math.random() * 20 + 8));
+// ─── Animated Waveform Bars (fallback when no real stream) ────────────────────
+const WaveformBars: React.FC<{ active: boolean; colorStart: string; colorEnd: string }> = ({ active, colorStart, colorEnd }) => {
+  const [bars, setBars] = useState<number[]>(Array(32).fill(0).map(() => Math.random() * 16 + 4));
   useEffect(() => {
     if (!active) {
-      setBars(Array(28).fill(0).map(() => Math.random() * 8 + 4));
+      setBars(Array(32).fill(0).map(() => Math.random() * 6 + 3));
       return;
     }
-    const interval = setInterval(() => {
-      setBars(prev => prev.map(() => Math.random() * 52 + 8));
-    }, 80);
-    return () => clearInterval(interval);
+    const id = setInterval(() => {
+      setBars(prev => prev.map(() => Math.random() * 48 + 4));
+    }, 70);
+    return () => clearInterval(id);
   }, [active]);
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '3px', height: '64px', padding: '4px 0' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '2.5px', height: '52px', padding: '4px 0' }}>
       {bars.map((h, i) => (
         <div key={i} style={{
-          width: '5px', height: `${h}px`, borderRadius: '3px',
-          background: active ? color : 'rgba(148,163,184,0.2)',
-          transition: 'height 0.08s ease',
-          flexShrink: 0
+          width: '4px',
+          height: `${h}px`,
+          borderRadius: '2px',
+          background: active
+            ? `linear-gradient(180deg, ${colorStart}, ${colorEnd})`
+            : 'rgba(148,163,184,0.12)',
+          transition: 'height 0.07s ease',
+          flexShrink: 0,
+          boxShadow: active ? `0 0 4px ${colorStart}55` : 'none',
         }} />
       ))}
     </div>
   );
 };
 
-// ─── Animated Pulse Dot ───────────────────────────────────────────────────────
-const PulseDot: React.FC<{ color: string }> = ({ color }) => (
-  <div style={{ position: 'relative', width: '10px', height: '10px' }}>
-    <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: color, opacity: 0.4, animation: 'pulse 1.5s ease-in-out infinite' }} />
-    <div style={{ position: 'absolute', inset: '2px', borderRadius: '50%', background: color }} />
+// ─── Status Dot ───────────────────────────────────────────────────────────────
+const StatusDot: React.FC<{ color: string; pulse?: boolean }> = ({ color, pulse = true }) => (
+  <div style={{ position: 'relative', width: '8px', height: '8px', flexShrink: 0 }}>
+    {pulse && (
+      <div style={{ position: 'absolute', inset: '-3px', borderRadius: '50%', background: color, opacity: 0, animation: 'ripple 2s ease infinite' }} />
+    )}
+    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: color, boxShadow: `0 0 8px ${color}` }} />
   </div>
 );
 
-// ─── Main App Component ────────────────────────────────────────────────────────
+// ─── Metric Chip ──────────────────────────────────────────────────────────────
+const MetricChip: React.FC<{ label: string; value: string; color: string; sub?: string }> = ({ label, value, color, sub }) => (
+  <div style={{
+    display: 'flex', flexDirection: 'column', gap: '2px',
+    padding: '10px 14px', borderRadius: 'var(--r-md)',
+    background: 'rgba(10,18,34,0.6)', border: '1px solid rgba(51,65,85,0.4)',
+    minWidth: '80px',
+  }}>
+    <span className="label" style={{ fontSize: '9px' }}>{label}</span>
+    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '15px', fontWeight: 700, color, lineHeight: 1 }}>{value}</span>
+    {sub && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--text-muted)' }}>{sub}</span>}
+  </div>
+);
+
+// ─── Session State config ─────────────────────────────────────────────────────
+type SessionState = 'IDLE' | 'LISTENING' | 'THINKING' | 'SPEAKING' | 'INTERRUPTED';
+const STATE_CONFIG: Record<SessionState, { color: string; label: string }> = {
+  IDLE:        { color: '#475569', label: 'Idle'        },
+  LISTENING:   { color: '#22d3ee', label: 'Listening'   },
+  THINKING:    { color: '#a78bfa', label: 'Processing'  },
+  SPEAKING:    { color: '#34d399', label: 'Speaking'    },
+  INTERRUPTED: { color: '#f43f5e', label: 'Interrupted' },
+};
+
+// ─── Scenario metadata ────────────────────────────────────────────────────────
+const SCENARIOS: Record<string, { title: string; subject_name: string; threat_level: string; location: string }> = {
+  bank_hostage:    { title: 'Armed Bank Robbery',         subject_name: 'Mark Vance (34)',     threat_level: 'CRITICAL', location: 'First Federal Savings, Downtown' },
+  bridge_jumper:   { title: 'Suicide Intervention',       subject_name: 'David Cole (28)',      threat_level: 'HIGH',     location: 'Suspension Bridge Walkway, Pier 4' },
+  cyber_extortion: { title: 'Healthcare Ransomware',      subject_name: 'Cipher-X Syndicate',  threat_level: 'MODERATE', location: 'Dark Web Voice Relay' },
+};
+
+// ─── App ──────────────────────────────────────────────────────────────────────
 export const App: React.FC = () => {
-  const [isConnected, setIsConnected] = useState(false);
-  const [sessionState, setSessionState] = useState<'IDLE' | 'LISTENING' | 'THINKING' | 'SPEAKING' | 'INTERRUPTED'>('IDLE');
-  const [transcript, setTranscript] = useState('');
-  const [aiResponse, setAiResponse] = useState('');
-  const [arousal, setArousal] = useState(0.12);
-  const [valence, setValence] = useState(0.65);
-  const [emotionLabel, setEmotionLabel] = useState('CALM');
-  const [ttfa, setTtfa] = useState(0);
-  const [messages, setMessages] = useState<{ role: 'user' | 'ai'; text: string; ts: string }[]>([]);
-  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
-  const [statusNotice, setStatusNotice] = useState<string | null>(null);
-  const [bcsmData, setBcsmData] = useState<BCSMData | null>(null);
-  const [fusionData, setFusionData] = useState<{
-    flag: string;
-    incongruence_score: number;
-    tactical_hint: string;
-  } | null>(null);
-  const [activeScenario, setActiveScenario] = useState<{
-    id: string;
-    title: string;
-    subject_name: string;
-    threat_level: string;
-    location: string;
-  }>({
-    id: 'bank_hostage',
-    title: 'Armed Bank Robbery',
-    subject_name: 'Mark Vance (34)',
-    threat_level: 'CRITICAL',
-    location: 'First Federal Savings, Downtown'
-  });
+  const [isConnected, setIsConnected]       = useState(false);
+  const [sessionState, setSessionState]     = useState<SessionState>('IDLE');
+  const [transcript, setTranscript]         = useState('');
+  const [arousal, setArousal]               = useState(0.12);
+  const [valence, setValence]               = useState(0.65);
+  const [emotionLabel, setEmotionLabel]     = useState('CALM');
+  const [ttfa, setTtfa]                     = useState(0);
+  const [messages, setMessages]             = useState<{ role: 'user' | 'ai'; text: string; ts: string }[]>([]);
+  const [localStream, setLocalStream]       = useState<MediaStream | null>(null);
+  const [remoteStream, setRemoteStream]     = useState<MediaStream | null>(null);
+  const [statusNotice, setStatusNotice]     = useState<string | null>(null);
+  const [bcsmData, setBcsmData]             = useState<BCSMData | null>(null);
+  const [fusionData, setFusionData]         = useState<{ flag: string; incongruence_score: number; tactical_hint: string } | null>(null);
+  const [scenarioId, setScenarioId]         = useState('bank_hostage');
+  const [elapsed, setElapsed]               = useState(0);
 
-  const webrtcClientRef = useRef<AuralisWebRTCClient | null>(null);
+  const webrtcRef = useRef<AuralisWebRTCClient | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const handleScenarioChange = (scenarioId: string) => {
-    if (scenarioId === 'bank_hostage') {
-      setActiveScenario({
-        id: 'bank_hostage',
-        title: 'Armed Bank Robbery',
-        subject_name: 'Mark Vance (34)',
-        threat_level: 'CRITICAL',
-        location: 'First Federal Savings, Downtown'
-      });
-    } else if (scenarioId === 'bridge_jumper') {
-      setActiveScenario({
-        id: 'bridge_jumper',
-        title: 'Suicide Intervention',
-        subject_name: 'David Cole (28)',
-        threat_level: 'HIGH',
-        location: 'Suspension Bridge Walkway, Pier 4'
-      });
-    } else if (scenarioId === 'cyber_extortion') {
-      setActiveScenario({
-        id: 'cyber_extortion',
-        title: 'Healthcare Ransomware Extortion',
-        subject_name: 'Cipher-X Syndicate',
-        threat_level: 'MODERATE',
-        location: 'Dark Web Voice Relay'
-      });
+  // Auto-scroll conversation
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
+  // Session timer
+  useEffect(() => {
+    if (isConnected) {
+      setElapsed(0);
+      timerRef.current = setInterval(() => setElapsed(e => e + 1), 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
     }
-    if (webrtcClientRef.current) {
-      webrtcClientRef.current.selectScenario(scenarioId);
-    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [isConnected]);
+
+  const formatTime = (s: number) => `${String(Math.floor(s / 60)).padStart(2,'0')}:${String(s % 60).padStart(2,'0')}`;
+  const getTimestamp = () => new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+  const handleScenarioChange = useCallback((id: string) => {
+    setScenarioId(id);
+    webrtcRef.current?.selectScenario(id);
     setMessages([]);
     setBcsmData(null);
     setFusionData(null);
-  };
-
-
-  const getTimestamp = () => new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-
-  const getStateColor = () => {
-    switch (sessionState) {
-      case 'LISTENING': return '#22d3ee';
-      case 'THINKING': return '#a78bfa';
-      case 'SPEAKING': return '#34d399';
-      case 'INTERRUPTED': return '#f87171';
-      default: return '#64748b';
-    }
-  };
-
-  const getEmotionBadge = () => {
-    if (arousal > 0.7) return { label: 'PANIC', bg: 'rgba(239,68,68,0.15)', border: 'rgba(239,68,68,0.4)', text: '#f87171' };
-    if (arousal > 0.4) return { label: 'AGITATED', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.4)', text: '#fbbf24' };
-    return { label: 'CALM', bg: 'rgba(16,185,129,0.15)', border: 'rgba(16,185,129,0.4)', text: '#34d399' };
-  };
-
-  const badge = getEmotionBadge();
+  }, []);
 
   const startSession = async () => {
     try {
       setStatusNotice(null);
       const host = window.location.hostname || 'localhost';
-      const signalingUrl = `ws://${host}:8000/ws/signaling`;
-
       const client = new AuralisWebRTCClient({
-        signalingUrl,
+        signalingUrl: `ws://${host}:8000/ws/signaling`,
         iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
         onTranscript: (text: string) => {
           setTranscript(text);
           setMessages(prev => [...prev, { role: 'user', text, ts: getTimestamp() }]);
         },
         onEmotionUpdate: (a: number, v: number, label: string) => {
-          setArousal(a);
-          setValence(v);
-          setEmotionLabel(label.toUpperCase());
+          setArousal(a); setValence(v); setEmotionLabel(label.toUpperCase());
         },
-        onStateChange: (state: string) => {
-          setSessionState(state as any);
-        },
-        onLatencyUpdate: (ttfaMs: number) => {
-          setTtfa(ttfaMs);
-        },
-        onBCSMScore: (data: BCSMData) => {
-          setBcsmData(data);
-        },
-        onFusionUpdate: (data: any) => {
-          setFusionData(data);
-        },
+        onStateChange: (state: string) => setSessionState(state as SessionState),
+        onLatencyUpdate: (ms: number) => setTtfa(ms),
+        onBCSMScore: (data: BCSMData) => setBcsmData(data),
+        onFusionUpdate: (data: any) => setFusionData(data),
         onAiText: (text: string) => {
-          setAiResponse(text);
           setMessages(prev => {
             const last = prev[prev.length - 1];
-            if (last && last.role === 'ai') {
-              return [...prev.slice(0, -1), { role: 'ai', text: `${last.text} ${text}`.trim(), ts: last.ts }];
-            }
+            if (last?.role === 'ai') return [...prev.slice(0, -1), { role: 'ai', text: `${last.text} ${text}`.trim(), ts: last.ts }];
             return [...prev, { role: 'ai', text, ts: getTimestamp() }];
           });
         },
-        onRemoteStream: (stream: MediaStream) => {
-          setRemoteStream(stream);
-        }
+        onRemoteStream: (stream: MediaStream) => setRemoteStream(stream),
       });
-
 
       const micStream = await client.initialize();
       setLocalStream(micStream);
-      webrtcClientRef.current = client;
+      webrtcRef.current = client;
       setIsConnected(true);
       setSessionState('LISTENING');
     } catch (err: any) {
-      console.error('Failed to initialize WebRTC session:', err);
       setStatusNotice(`Microphone or signaling connection failed: ${err.message || err}`);
     }
   };
 
   const stopSession = () => {
-    if (webrtcClientRef.current) {
-      webrtcClientRef.current.disconnect();
-      webrtcClientRef.current = null;
-    }
-    setLocalStream(null);
-    setRemoteStream(null);
-    setIsConnected(false);
-    setSessionState('IDLE');
-    setTranscript('');
-    setAiResponse('');
-    setArousal(0.12);
-    setValence(0.65);
+    webrtcRef.current?.disconnect();
+    webrtcRef.current = null;
+    setLocalStream(null); setRemoteStream(null);
+    setIsConnected(false); setSessionState('IDLE');
+    setTranscript(''); setArousal(0.12); setValence(0.65);
   };
 
   const simulatePanic = () => {
     const msg = "Put the gun down! Don't come any closer! I don't know what to do!";
-    setTranscript(msg);
-    setArousal(0.92);
-    setValence(-0.80);
-    setEmotionLabel('PANIC');
+    setTranscript(msg); setArousal(0.92); setValence(-0.80); setEmotionLabel('PANIC');
     setMessages(prev => [...prev, { role: 'user', text: msg, ts: getTimestamp() }]);
-    
-    if (webrtcClientRef.current) {
-      webrtcClientRef.current.sendTurnRequest(msg, {
-        arousal: 0.92,
-        valence: -0.80,
-        primary_label: 'panic'
-      });
+    if (webrtcRef.current) {
+      webrtcRef.current.sendTurnRequest(msg, { arousal: 0.92, valence: -0.80, primary_label: 'panic' });
     } else {
-      setStatusNotice("Click 'Start Simulation' first to connect the real WebRTC engine.");
+      setStatusNotice("Connect first using 'Start Simulation' to activate the WebRTC engine.");
     }
   };
 
   const triggerBargeIn = () => {
-    if (webrtcClientRef.current) {
-      webrtcClientRef.current.triggerBargeIn();
-    }
+    webrtcRef.current?.triggerBargeIn();
     setSessionState('INTERRUPTED');
-    setMessages(prev => [...prev, { role: 'user', text: '[Barge-in interrupt triggered — AI speech halted in <150ms]', ts: getTimestamp() }]);
+    setMessages(prev => [...prev, { role: 'user', text: '[⚡ Barge-in interrupt — AI speech halted in <150ms]', ts: getTimestamp() }]);
     setTimeout(() => setSessionState('LISTENING'), 600);
   };
 
+  const sc = STATE_CONFIG[sessionState];
+  const emotionBgColor = arousal > 0.7 ? 'rgba(244,63,94,0.12)' : arousal > 0.4 ? 'rgba(245,158,11,0.12)' : 'rgba(16,185,129,0.12)';
+  const emotionTextColor = arousal > 0.7 ? '#fb7185' : arousal > 0.4 ? '#fbbf24' : '#34d399';
 
   return (
     <>
-      <style>{`
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #070d1a; color: #e2e8f0; font-family: 'Inter', system-ui, -apple-system, sans-serif; min-height: 100vh; }
-        @keyframes pulse { 0%,100%{transform:scale(1);opacity:0.4} 50%{transform:scale(2);opacity:0} }
-        @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes spin { to{transform:rotate(360deg)} }
-        .card { background: rgba(15,23,42,0.8); border: 1px solid rgba(51,65,85,0.6); border-radius: 16px; backdrop-filter: blur(12px); }
-        .btn-primary { display:flex;align-items:center;gap:8px;padding:10px 20px;border-radius:10px;border:none;cursor:pointer;font-size:14px;font-weight:600;font-family:inherit;transition:all 0.2s; background:linear-gradient(135deg,#06b6d4,#3b82f6);color:white;box-shadow:0 0 20px rgba(6,182,212,0.3); }
-        .btn-primary:hover { transform:translateY(-1px);box-shadow:0 0 30px rgba(6,182,212,0.5); }
-        .btn-danger { display:flex;align-items:center;gap:8px;padding:10px 20px;border-radius:10px;border:1px solid rgba(248,113,113,0.4);cursor:pointer;font-size:14px;font-weight:600;font-family:inherit;transition:all 0.2s;background:rgba(239,68,68,0.12);color:#f87171; }
-        .btn-danger:hover { background:rgba(239,68,68,0.2); }
-        .btn-action { width:100%;padding:11px 16px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:500;font-family:inherit;transition:all 0.2s;text-align:left; }
-        .btn-action:disabled { opacity:0.4;cursor:not-allowed; }
-        .btn-amber { background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#fbbf24; }
-        .btn-amber:hover:not(:disabled) { background:rgba(245,158,11,0.2); }
-        .btn-rose { background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171; }
-        .btn-rose:hover:not(:disabled) { background:rgba(239,68,68,0.2); }
-        .progress-bar { width:100%;height:6px;background:rgba(51,65,85,0.6);border-radius:999px;overflow:hidden; }
-        .progress-fill { height:100%;border-radius:999px;transition:width 0.4s ease; }
-        .msg-bubble { animation:fadeIn 0.3s ease; }
-        .thinking-dot { width:6px;height:6px;border-radius:50%;background:#a78bfa;display:inline-block;animation:pulse 1s ease-in-out infinite; }
-        ::-webkit-scrollbar { width:4px; }
-        ::-webkit-scrollbar-track { background:transparent; }
-        ::-webkit-scrollbar-thumb { background:rgba(51,65,85,0.8);border-radius:4px; }
-      `}</style>
+      {/* ── Global Keyframe patch for ripple (needed inline for the StatusDot) ── */}
+      <style>{`@keyframes ripple{0%{opacity:.5;transform:scale(1)}100%{opacity:0;transform:scale(2.8)}}`}</style>
 
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'linear-gradient(135deg, #070d1a 0%, #0d1929 50%, #070d1a 100%)' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 
-        {/* ── Header ── */}
-        <header style={{ padding: '0 24px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(51,65,85,0.5)', background: 'rgba(7,13,26,0.9)', backdropFilter: 'blur(12px)', position: 'sticky', top: 0, zIndex: 50 }}>
+        {/* ════════════════════════════════ HEADER ═══════════════════════════════ */}
+        <header style={{
+          height: '60px', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          borderBottom: '1px solid var(--border-subtle)',
+          background: 'rgba(5,11,22,0.92)', backdropFilter: 'blur(20px)',
+          position: 'sticky', top: 0, zIndex: 100,
+        }}>
+          {/* Logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 16px rgba(6,182,212,0.4)' }}>
+            <div style={{
+              width: '34px', height: '34px', borderRadius: '10px',
+              background: 'linear-gradient(135deg, #22d3ee 0%, #3b82f6 100%)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 0 18px rgba(34,211,238,0.38)',
+              animation: isConnected ? 'glow-pulse 2.4s ease-in-out infinite' : 'none',
+            }}>
               <ZapIcon />
             </div>
             <div>
-              <div style={{ fontSize: '18px', fontWeight: '800', letterSpacing: '0.08em', background: 'linear-gradient(90deg, #ffffff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>AURALIS</div>
-              <div style={{ fontSize: '11px', color: '#64748b', letterSpacing: '0.04em' }}>Real-Time Voice-to-Voice Emotion Engine</div>
+              <div className="gradient-text" style={{ fontSize: '16px', fontWeight: 900, letterSpacing: '0.12em' }}>AURALIS</div>
+              <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.04em', marginTop: '-1px' }}>
+                Real-Time Crisis Negotiation Engine
+              </div>
+            </div>
+
+            {/* Breadcrumb */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '8px', color: 'var(--text-muted)', fontSize: '11px' }}>
+              <ChevronRightIcon />
+              <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>
+                {SCENARIOS[scenarioId]?.title ?? 'Scenario'}
+              </span>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {/* Scenario Selector Dropdown */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(15,23,42,0.85)', padding: '4px 10px', borderRadius: '10px', border: '1px solid rgba(56,189,248,0.3)' }}>
+          {/* Right Controls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+
+            {/* Session timer */}
+            {isConnected && (
+              <div style={{
+                fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600,
+                color: '#22d3ee', background: 'rgba(34,211,238,0.08)',
+                border: '1px solid rgba(34,211,238,0.2)', borderRadius: 'var(--r-md)',
+                padding: '5px 12px', letterSpacing: '0.08em',
+              }}>
+                {formatTime(elapsed)}
+              </div>
+            )}
+
+            {/* Scenario selector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(10,18,34,0.7)', padding: '4px 10px', borderRadius: 'var(--r-md)', border: '1px solid var(--border-base)' }}>
               <ShieldIcon />
               <select
-                value={activeScenario.id}
-                onChange={(e) => handleScenarioChange(e.target.value)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#38bdf8',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  outline: 'none',
-                  cursor: 'pointer'
-                }}
+                className="select-styled"
+                value={scenarioId}
+                onChange={e => handleScenarioChange(e.target.value)}
+                style={{ background: 'transparent', border: 'none', padding: '0', borderRadius: '0', boxShadow: 'none', paddingRight: '20px' }}
               >
-                <option value="bank_hostage" style={{ background: '#0f172a', color: '#e2e8f0' }}>Bank Hostage (Mark Vance)</option>
-                <option value="bridge_jumper" style={{ background: '#0f172a', color: '#e2e8f0' }}>Suicide Intervention (David Cole)</option>
-                <option value="cyber_extortion" style={{ background: '#0f172a', color: '#e2e8f0' }}>Ransomware Call (Cipher-X)</option>
+                <option value="bank_hostage">Bank Hostage (Mark Vance)</option>
+                <option value="bridge_jumper">Bridge Intervention (David Cole)</option>
+                <option value="cyber_extortion">Ransomware Call (Cipher-X)</option>
               </select>
             </div>
 
             {isConnected ? (
-              <button className="btn-danger" onClick={stopSession}>
-                <PhoneOffIcon /> End Session
-              </button>
+              <button className="btn btn-danger" onClick={stopSession}><PhoneOffIcon /> End Session</button>
             ) : (
-              <button className="btn-primary" onClick={startSession}>
-                <MicIcon /> Start Simulation
-              </button>
+              <button className="btn btn-primary" onClick={startSession}><MicIcon /> Start Simulation</button>
             )}
           </div>
         </header>
 
+        {/* ════════════════════════════════ STATUS NOTICE ═══════════════════════ */}
         {statusNotice && (
-          <div style={{ padding: '10px 24px', background: 'rgba(239,68,68,0.15)', borderBottom: '1px solid rgba(239,68,68,0.3)', color: '#f87171', fontSize: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{
+            padding: '8px 24px', background: 'rgba(244,63,94,0.1)', borderBottom: '1px solid rgba(244,63,94,0.25)',
+            color: '#fb7185', fontSize: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            animation: 'fadeIn 0.2s ease',
+          }}>
             <span>⚠️ {statusNotice}</span>
-            <button onClick={() => setStatusNotice(null)} style={{ background: 'transparent', border: 'none', color: '#f87171', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
+            <button onClick={() => setStatusNotice(null)} style={{ background: 'transparent', border: 'none', color: '#fb7185', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+              <XIcon />
+            </button>
           </div>
         )}
 
-        {/* ── Main Layout ── */}
-        <main style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px', padding: '20px 24px', maxWidth: '1440px', width: '100%', margin: '0 auto' }}>
+        {/* ════════════════════════════════ STATUS BAR ══════════════════════════ */}
+        <div style={{
+          height: '44px', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: 'rgba(10,18,34,0.6)', borderBottom: '1px solid var(--border-subtle)', flexShrink: 0,
+          gap: '24px', overflowX: 'auto',
+        }}>
+          {/* Left: Live state */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+              <StatusDot color={sc.color} pulse={isConnected} />
+              <span className="label">State</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: sc.color }}>{sc.label.toUpperCase()}</span>
+            </div>
+            <div className="divider-v" style={{ height: '20px', width: '1px', background: 'var(--border-subtle)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+              <span className="label">TTFA</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 700, color: ttfa > 0 && ttfa <= 800 ? '#34d399' : '#fbbf24' }}>
+                {ttfa ? `${ttfa}ms` : '—'}
+              </span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--text-muted)' }}>/ 800ms</span>
+            </div>
+            <div className="divider-v" style={{ height: '20px', width: '1px', background: 'var(--border-subtle)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+              <span className="label">Barge-in</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 700, color: '#34d399' }}>112ms</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--text-muted)' }}>/ 150ms</span>
+            </div>
+            <div className="divider-v" style={{ height: '20px', width: '1px', background: 'var(--border-subtle)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+              <span className="label">Emotion</span>
+              <span style={{
+                fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: emotionTextColor,
+                background: emotionBgColor, padding: '1px 7px', borderRadius: 'var(--r-full)',
+              }}>
+                {emotionLabel}
+              </span>
+            </div>
+          </div>
 
-          {/* Top Mission Briefing Dossier */}
+          {/* Right: Stack chips */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            {['Groq Llama 3.1', 'Cartesia Sonic', 'Faster-Whisper', 'Wav2Vec2'].map(t => (
+              <span key={t} style={{
+                fontSize: '10px', fontWeight: 500, color: 'var(--text-muted)',
+                background: 'rgba(30,42,68,0.5)', border: '1px solid var(--border-subtle)',
+                padding: '2px 8px', borderRadius: 'var(--r-full)',
+              }}>{t}</span>
+            ))}
+          </div>
+        </div>
+
+        {/* ════════════════════════════════ MAIN CONTENT ════════════════════════ */}
+        <main style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px 24px', maxWidth: '1480px', width: '100%', margin: '0 auto', minHeight: 0 }}>
+
+          {/* ── Mission Dossier ── */}
           <ScenarioBriefingCard
-            scenarioId={activeScenario.id}
+            scenarioId={scenarioId}
             onScenarioSelect={handleScenarioChange}
             isConnected={isConnected}
           />
 
-          <div style={{ display: 'grid', gridTemplateColumns: '340px 1fr', gap: '20px', alignItems: 'start' }}>
+          {/* ── Two-column layout ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '16px', flex: 1, minHeight: 0, alignItems: 'start' }}>
 
-            {/* ── Left Sidebar ── */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* ══════════════════ LEFT SIDEBAR ══════════════════════════════════ */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
-              {/* Audio Visualizer Card */}
-              <div className="card" style={{ padding: '18px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {/* ── Live Audio Panel ── */}
+              <div className="card" style={{ padding: '16px' }}>
+                <div className="flex-between" style={{ marginBottom: '14px' }}>
+                  <div className="flex-start" style={{ gap: '7px' }}>
                     <ActivityIcon />
-                    <span style={{ fontSize: '12px', fontWeight: '600', color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Live Audio Stream</span>
+                    <span className="label">Live Audio Stream</span>
                   </div>
-                  {isConnected && <PulseDot color="#22d3ee" />}
+                  {isConnected && <StatusDot color="#22d3ee" />}
                 </div>
 
-                {/* User waveform */}
-                <div style={{ marginBottom: '12px' }}>
-                  <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px' }}>You (Microphone Live Stream)</div>
-                  {localStream ? (
-                    <AudioVisualizer stream={localStream} color="#38bdf8" height={48} />
-                  ) : (
-                    <WaveformBars active={isConnected && sessionState === 'LISTENING'} color="linear-gradient(90deg,#f87171,#fb923c)" />
-                  )}
+                {/* You */}
+                <div style={{ marginBottom: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 500 }}>🎙 You — Microphone</span>
+                    {sessionState === 'LISTENING' && <span className="badge badge-cyan" style={{ fontSize: '9px', padding: '1px 6px' }}>LIVE</span>}
+                  </div>
+                  {localStream
+                    ? <AudioVisualizer stream={localStream} color="#22d3ee" height={48} />
+                    : <WaveformBars active={isConnected && sessionState === 'LISTENING'} colorStart="#f43f5e" colorEnd="#fb923c" />
+                  }
                 </div>
 
-                {/* AI waveform */}
+                {/* AI */}
                 <div>
-                  <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px' }}>Auralis AI Response</div>
-                  {remoteStream ? (
-                    <AudioVisualizer stream={remoteStream} color="#34d399" height={48} />
-                  ) : (
-                    <WaveformBars active={sessionState === 'SPEAKING'} color="linear-gradient(90deg,#06b6d4,#3b82f6)" />
-                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 500 }}>🤖 Auralis AI Response</span>
+                    {sessionState === 'SPEAKING' && <span className="badge badge-emerald" style={{ fontSize: '9px', padding: '1px 6px' }}>SPEAKING</span>}
+                  </div>
+                  {remoteStream
+                    ? <AudioVisualizer stream={remoteStream} color="#34d399" height={48} />
+                    : <WaveformBars active={sessionState === 'SPEAKING'} colorStart="#22d3ee" colorEnd="#3b82f6" />
+                  }
                 </div>
               </div>
 
-              {/* 2D Circumplex Emotion Radar */}
-              <EmotionQuadrantRadar
-                arousal={arousal}
-                valence={valence}
-                primaryLabel={emotionLabel}
-              />
+              {/* ── Emotion Radar ── */}
+              <EmotionQuadrantRadar arousal={arousal} valence={valence} primaryLabel={emotionLabel} />
 
-              {/* Dual-Stream Emotion Fusion Alert Banner */}
+              {/* ── Fusion Alert ── */}
               {fusionData && fusionData.flag !== 'ALIGNED' && (
                 <div style={{
-                  padding: '12px 14px',
-                  borderRadius: '12px',
-                  background: 'rgba(239, 68, 68, 0.15)',
-                  border: '1px solid rgba(239, 68, 68, 0.4)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '6px',
-                  boxShadow: '0 4px 16px rgba(239, 68, 68, 0.2)'
+                  padding: '12px 14px', borderRadius: 'var(--r-lg)',
+                  background: 'rgba(244,63,94,0.12)', border: '1px solid rgba(244,63,94,0.35)',
+                  boxShadow: '0 4px 20px rgba(244,63,94,0.18)',
+                  animation: 'fadeUp 0.3s ease',
                 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#f87171', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                      ⚡ DISSONANCE: {fusionData.flag.replace('_', ' ')}
+                  <div className="flex-between" style={{ marginBottom: '6px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#fb7185', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                      ⚡ {fusionData.flag.replace(/_/g, ' ')}
                     </span>
-                    <span style={{ fontSize: '11px', color: '#fca5a5', fontFamily: 'monospace', fontWeight: 700 }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#fca5a5', fontWeight: 700 }}>
                       {(fusionData.incongruence_score * 100).toFixed(0)}%
                     </span>
                   </div>
-                  <span style={{ fontSize: '11px', color: '#cbd5e1', lineHeight: '1.4' }}>
-                    {fusionData.tactical_hint}
-                  </span>
+                  <p style={{ fontSize: '11px', color: '#cbd5e1', lineHeight: '1.5', margin: 0 }}>{fusionData.tactical_hint}</p>
                 </div>
               )}
 
-              {/* Simulation Controls */}
-              <div className="card" style={{ padding: '18px' }}>
-                <div style={{ fontSize: '12px', fontWeight: '600', color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '12px' }}>Tactical Controls</div>
+              {/* ── Tactical Controls ── */}
+              <div className="card" style={{ padding: '16px' }}>
+                <div className="flex-between" style={{ marginBottom: '12px' }}>
+                  <div className="flex-start" style={{ gap: '7px' }}>
+                    <BrainIcon />
+                    <span className="label">Tactical Controls</span>
+                  </div>
+                  {!isConnected && <span className="badge badge-amber">Offline</span>}
+                </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <button className="btn-action btn-amber" disabled={!isConnected} onClick={simulatePanic}>
-                    🎙 Simulate Panicked Utterance
+                  <button
+                    className="btn btn-amber btn-block"
+                    style={{ justifyContent: 'flex-start', height: '38px', fontSize: '12px' }}
+                    disabled={!isConnected}
+                    onClick={simulatePanic}
+                  >
+                    🎙 &nbsp;Simulate Panicked Utterance
                   </button>
-                  <button className="btn-action btn-rose" disabled={!isConnected} onClick={triggerBargeIn}>
-                    ✋ Trigger Barge-in Interrupt
+                  <button
+                    className="btn btn-rose btn-block"
+                    style={{ justifyContent: 'flex-start', height: '38px', fontSize: '12px' }}
+                    disabled={!isConnected}
+                    onClick={triggerBargeIn}
+                  >
+                    ✋ &nbsp;Trigger Barge-in Interrupt
                   </button>
                 </div>
               </div>
             </div>
 
+            {/* ══════════════════ RIGHT PANEL ════════════════════════════════════ */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minHeight: 0 }}>
 
-          {/* ── Right Panel ── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minHeight: '0' }}>
+              {/* ── BCSM Scorecard ── */}
+              <BCSMStaircase data={bcsmData} />
 
-            {/* Latency HUD */}
-            <div className="card" style={{ padding: '14px 20px' }}>
-              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <PulseDot color={getStateColor()} />
-                  <span style={{ fontSize: '11px', color: '#64748b', fontFamily: 'monospace' }}>STATE</span>
-                  <span style={{ fontSize: '13px', fontWeight: '700', color: getStateColor(), fontFamily: 'monospace', letterSpacing: '0.06em' }}>{sessionState}</span>
-                </div>
-                <div style={{ width: '1px', height: '20px', background: 'rgba(51,65,85,0.6)' }} />
-                <div>
-                  <span style={{ fontSize: '11px', color: '#64748b', fontFamily: 'monospace' }}>TTFA (p50) </span>
-                  <span style={{ fontSize: '13px', fontWeight: '700', fontFamily: 'monospace', color: ttfa > 0 && ttfa <= 800 ? '#34d399' : '#fbbf24' }}>
-                    {ttfa ? `${ttfa}ms` : '—'}
+              {/* ── Conversation Log ── */}
+              <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0', overflow: 'hidden', minHeight: '420px' }}>
+
+                {/* Panel Header */}
+                <div style={{
+                  padding: '12px 18px', borderBottom: '1px solid var(--border-subtle)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0,
+                }}>
+                  <div className="flex-start" style={{ gap: '8px' }}>
+                    <span className="label" style={{ fontSize: '11px' }}>Negotiation Transcript</span>
+                    {isConnected && <span className="badge badge-cyan">● Live</span>}
+                  </div>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                    {messages.length} turn{messages.length !== 1 ? 's' : ''}
                   </span>
-                  <span style={{ fontSize: '10px', color: '#475569', fontFamily: 'monospace' }}> / 800ms SLA</span>
                 </div>
-                <div style={{ width: '1px', height: '20px', background: 'rgba(51,65,85,0.6)' }} />
-                <div>
-                  <span style={{ fontSize: '11px', color: '#64748b', fontFamily: 'monospace' }}>BARGE-IN HALT </span>
-                  <span style={{ fontSize: '13px', fontWeight: '700', fontFamily: 'monospace', color: '#34d399' }}>112ms</span>
-                  <span style={{ fontSize: '10px', color: '#475569', fontFamily: 'monospace' }}> / 150ms SLA</span>
-                </div>
-                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#475569', fontFamily: 'monospace' }}>
-                  <span>Groq Llama 3.1 8B</span>
-                  <span>·</span>
-                  <span>Cartesia Sonic</span>
-                  <span>·</span>
-                  <span>Faster-Whisper</span>
-                </div>
-              </div>
-            </div>
 
-            {/* FBI BCSM Tactical Staircase Scorecard */}
-            <BCSMStaircase data={bcsmData} />
-
-            {/* Conversation Log */}
-
-            <div className="card" style={{ flex: 1, padding: '20px', display: 'flex', flexDirection: 'column', minHeight: '460px' }}>
-              <div style={{ fontSize: '12px', fontWeight: '600', color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>Conversation Log</span>
-                {isConnected && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '999px', background: 'rgba(34,211,238,0.1)', border: '1px solid rgba(34,211,238,0.3)', color: '#22d3ee' }}>LIVE</span>}
-              </div>
-
-              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {messages.length === 0 ? (
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', color: '#334155' }}>
-                    <div style={{ width: '48px', height: '48px', borderRadius: '16px', background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(51,65,85,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <MicIcon />
-                    </div>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '14px', fontWeight: '500', color: '#475569', marginBottom: '4px' }}>No active session</div>
-                      <div style={{ fontSize: '12px', color: '#334155' }}>Click "Start Simulation" to begin</div>
-                    </div>
-                  </div>
-                ) : messages.map((msg, i) => (
-                  <div key={i} className="msg-bubble" style={{ display: 'flex', gap: '12px', flexDirection: msg.role === 'ai' ? 'row' : 'row' }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: msg.role === 'user' ? 'rgba(239,68,68,0.15)' : 'rgba(6,182,212,0.15)', border: `1px solid ${msg.role === 'user' ? 'rgba(239,68,68,0.3)' : 'rgba(6,182,212,0.3)'}`, fontSize: '14px' }}>
-                      {msg.role === 'user' ? '🎙' : '🤖'}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: '600', color: msg.role === 'user' ? '#f87171' : '#22d3ee' }}>
-                          {msg.role === 'user' ? 'Trainee Speaker' : 'Auralis Negotiator AI'}
-                        </span>
-                        <span style={{ fontSize: '10px', color: '#475569', fontFamily: 'monospace' }}>{msg.ts}</span>
+                {/* Messages */}
+                <div style={{ flex: 1, overflowY: 'auto', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  {messages.length === 0 ? (
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', color: 'var(--text-muted)', minHeight: '200px' }}>
+                      <div style={{
+                        width: '52px', height: '52px', borderRadius: '16px',
+                        background: 'rgba(15,25,48,0.6)', border: '1px solid var(--border-subtle)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        animation: 'float 3s ease-in-out infinite',
+                      }}>
+                        <MicIcon size={22} />
                       </div>
-                      <div style={{ fontSize: '14px', lineHeight: '1.6', color: '#cbd5e1', background: msg.role === 'user' ? 'rgba(239,68,68,0.06)' : 'rgba(6,182,212,0.06)', border: `1px solid ${msg.role === 'user' ? 'rgba(239,68,68,0.15)' : 'rgba(6,182,212,0.15)'}`, padding: '12px 14px', borderRadius: '12px', fontStyle: msg.text.startsWith('[') ? 'italic' : 'normal' }}>
-                        {msg.text}
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>No active session</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Click "Start Simulation" to connect the WebRTC engine</div>
                       </div>
                     </div>
-                  </div>
-                ))}
-                {sessionState === 'THINKING' && (
-                  <div style={{ display: 'flex', gap: '12px' }} className="msg-bubble">
-                    <div style={{ width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.3)', fontSize: '14px' }}>🤖</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '12px', fontWeight: '600', color: '#22d3ee', marginBottom: '6px' }}>Auralis Negotiator AI</div>
-                      <div style={{ fontSize: '14px', color: '#94a3b8', background: 'rgba(6,182,212,0.06)', border: '1px solid rgba(6,182,212,0.15)', padding: '14px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '12px', color: '#64748b' }}>Generating response</span>
-                        <div style={{ display: 'flex', gap: '4px' }}>
-                          {[0, 1, 2].map(n => <div key={n} className="thinking-dot" style={{ animationDelay: `${n * 0.2}s` }} />)}
+                  ) : messages.map((msg, i) => (
+                    <div key={i} className="anim-fade-up" style={{ display: 'flex', gap: '10px', animationDelay: `${i * 0.02}s` }}>
+                      {/* Avatar */}
+                      <div style={{
+                        width: '30px', height: '30px', borderRadius: '9px', flexShrink: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: msg.role === 'user' ? 'rgba(244,63,94,0.12)' : 'rgba(34,211,238,0.12)',
+                        border: `1px solid ${msg.role === 'user' ? 'rgba(244,63,94,0.25)' : 'rgba(34,211,238,0.25)'}`,
+                        fontSize: '13px', boxShadow: msg.role === 'user' ? '0 0 12px rgba(244,63,94,0.12)' : '0 0 12px rgba(34,211,238,0.12)',
+                      }}>
+                        {msg.role === 'user' ? '🎙' : '🤖'}
+                      </div>
+                      {/* Bubble */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="flex-start" style={{ gap: '8px', marginBottom: '5px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: msg.role === 'user' ? '#fb7185' : '#22d3ee' }}>
+                            {msg.role === 'user' ? 'Trainee Negotiator' : 'Auralis AI'}
+                          </span>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--text-muted)' }}>{msg.ts}</span>
+                        </div>
+                        <div style={{
+                          fontSize: '13px', lineHeight: '1.65', color: '#cbd5e1',
+                          background: msg.role === 'user' ? 'rgba(244,63,94,0.05)' : 'rgba(34,211,238,0.05)',
+                          border: `1px solid ${msg.role === 'user' ? 'rgba(244,63,94,0.12)' : 'rgba(34,211,238,0.12)'}`,
+                          padding: '10px 13px', borderRadius: '10px',
+                          fontStyle: msg.text.startsWith('[') ? 'italic' : 'normal',
+                          fontFamily: msg.text.startsWith('[') ? 'var(--font-mono)' : 'inherit',
+                          wordBreak: 'break-word',
+                        }}>
+                          {msg.text}
                         </div>
                       </div>
                     </div>
+                  ))}
+
+                  {/* Thinking Indicator */}
+                  {sessionState === 'THINKING' && (
+                    <div className="anim-fade-up" style={{ display: 'flex', gap: '10px' }}>
+                      <div style={{
+                        width: '30px', height: '30px', borderRadius: '9px', flexShrink: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: 'rgba(34,211,238,0.12)', border: '1px solid rgba(34,211,238,0.25)', fontSize: '13px',
+                      }}>🤖</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '11px', fontWeight: 700, color: '#22d3ee', marginBottom: '5px' }}>Auralis AI</div>
+                        <div style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '5px',
+                          background: 'rgba(34,211,238,0.06)', border: '1px solid rgba(34,211,238,0.12)',
+                          padding: '10px 14px', borderRadius: '10px',
+                        }}>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Processing</span>
+                          {[0,1,2].map(n => (
+                            <div key={n} style={{
+                              width: '5px', height: '5px', borderRadius: '50%', background: '#a78bfa',
+                              animation: `thinking 1.2s ease-in-out ${n * 0.2}s infinite`,
+                            }} />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Input hint bar */}
+                <div style={{
+                  padding: '10px 18px', borderTop: '1px solid var(--border-subtle)', flexShrink: 0,
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  background: 'rgba(10,18,34,0.5)',
+                }}>
+                  <div style={{
+                    flex: 1, padding: '8px 14px', borderRadius: 'var(--r-md)',
+                    background: 'rgba(15,25,48,0.6)', border: '1px solid var(--border-subtle)',
+                    fontSize: '12px', color: 'var(--text-muted)', userSelect: 'none',
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                  }}>
+                    <MicIcon size={12} />
+                    {isConnected
+                      ? sessionState === 'LISTENING' ? '🔴 Microphone active — speak to the suspect...' : `${sc.label}...`
+                      : 'Connect to begin voice negotiation session'
+                    }
                   </div>
-                )}
+                  {!isConnected && (
+                    <button className="btn btn-primary btn-sm" onClick={startSession}>
+                      <MicIcon size={12} /> Connect
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </main>
-    </div>
-  </>
-);
+        </main>
+
+        {/* ════════════════════════════════ FOOTER ══════════════════════════════ */}
+        <footer style={{
+          padding: '10px 24px', borderTop: '1px solid var(--border-subtle)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: 'rgba(5,11,22,0.8)',
+        }}>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+            Auralis © 2024 — FBI BCSM · Dual-Stream Emotion Fusion · Sub-800ms TTFA
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <StatusDot color={isConnected ? '#34d399' : '#475569'} pulse={isConnected} />
+            <span style={{ fontSize: '11px', color: isConnected ? '#34d399' : 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+              {isConnected ? 'SESSION ACTIVE' : 'OFFLINE'}
+            </span>
+          </div>
+        </footer>
+      </div>
+    </>
+  );
 };
