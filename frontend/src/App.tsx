@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 import { WebRTCProvider, useWebRTC } from './services/WebRTCContext';
+import { ThemeProvider, useTheme } from './services/ThemeContext';
 import { BriefingPage } from './pages/BriefingPage';
 import { WarRoomPage } from './pages/WarRoomPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { ScorecardPage } from './pages/ScorecardPage';
 import { TelemetryPage } from './pages/TelemetryPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { DevColorsPage } from './pages/DevColorsPage';
 
-type NavPage = 'briefing' | 'warroom' | 'analytics' | 'scorecard' | 'telemetry';
+type NavPage = 'briefing' | 'warroom' | 'analytics' | 'scorecard' | 'telemetry' | 'settings' | 'devcolors';
 
 const AppContent: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<NavPage>('warroom');
+  const { themePreference, setThemePreference, resolvedTheme } = useTheme();
   const {
     isConnected,
     sessionState,
@@ -29,18 +33,12 @@ const AppContent: React.FC = () => {
     { id: 'analytics', label: 'Emotion Radar', icon: '🧠' },
     { id: 'scorecard', label: 'BCSM Scorecard', icon: '🏅' },
     { id: 'telemetry', label: 'Telemetry', icon: '⚡' },
+    { id: 'settings', label: 'Settings', icon: '⚙️' },
+    { id: 'devcolors', label: '/dev/colors', icon: '🎨' },
   ];
 
-  const stateColors: Record<string, string> = {
-    IDLE: '#64748b',
-    LISTENING: '#22d3ee',
-    THINKING: '#a78bfa',
-    SPEAKING: '#34d399',
-    INTERRUPTED: '#f43f5e',
-  };
-
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-base)' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', color: 'var(--text)' }}>
       {/* Top Universal Navbar */}
       <header
         style={{
@@ -49,9 +47,8 @@ const AppContent: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          borderBottom: '1px solid var(--border-subtle)',
-          background: 'rgba(5,11,22,0.92)',
-          backdropFilter: 'blur(20px)',
+          borderBottom: '1px solid var(--border)',
+          background: 'var(--surface)',
           position: 'sticky',
           top: 0,
           zIndex: 100,
@@ -64,21 +61,22 @@ const AppContent: React.FC = () => {
               width: '32px',
               height: '32px',
               borderRadius: '8px',
-              background: 'linear-gradient(135deg, #22d3ee 0%, #3b82f6 100%)',
+              background: 'var(--accent)',
+              color: 'var(--on-accent)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 0 16px rgba(34,211,238,0.3)',
+              fontWeight: 900,
             }}
           >
-            ⚡
+            A
           </div>
           <div>
-            <div className="gradient-text" style={{ fontSize: '15px', fontWeight: 900, letterSpacing: '0.1em' }}>
+            <div style={{ fontSize: '15px', fontWeight: 900, letterSpacing: '0.08em', color: 'var(--text)' }}>
               AURALIS
             </div>
             <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '-2px' }}>
-              Voice Emotion Engine
+              Bhaav Emotion Design System
             </div>
           </div>
         </div>
@@ -97,9 +95,9 @@ const AppContent: React.FC = () => {
                   gap: '6px',
                   padding: '7px 14px',
                   borderRadius: '8px',
-                  border: isActive ? '1px solid rgba(34,211,238,0.4)' : '1px solid transparent',
-                  background: isActive ? 'rgba(34,211,238,0.1)' : 'transparent',
-                  color: isActive ? '#38bdf8' : 'var(--text-secondary)',
+                  border: isActive ? '1px solid var(--accent)' : '1px solid transparent',
+                  background: isActive ? 'var(--surface-elevated)' : 'transparent',
+                  color: isActive ? 'var(--accent)' : 'var(--text-muted)',
                   fontWeight: isActive ? 700 : 500,
                   fontSize: '13px',
                   cursor: 'pointer',
@@ -113,17 +111,30 @@ const AppContent: React.FC = () => {
           })}
         </nav>
 
-        {/* Right: Persistent Call Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* Right: Quick Theme Switcher & Call Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {/* Quick theme cycle button */}
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => {
+              if (themePreference === 'system') setThemePreference('dark');
+              else if (themePreference === 'dark') setThemePreference('light');
+              else setThemePreference('system');
+            }}
+            title="Toggle Theme (System / Dark / Light)"
+          >
+            {resolvedTheme === 'dark' ? '🌙 Dark' : '☀️ Light'}
+          </button>
+
           {isConnected && (
             <div
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '12px',
                 fontWeight: 700,
-                color: '#22d3ee',
-                background: 'rgba(34,211,238,0.08)',
-                border: '1px solid rgba(34,211,238,0.2)',
+                color: 'var(--accent)',
+                background: 'var(--surface-elevated)',
+                border: '1px solid var(--border)',
                 padding: '4px 10px',
                 borderRadius: '6px',
               }}
@@ -144,7 +155,7 @@ const AppContent: React.FC = () => {
         </div>
       </header>
 
-      {/* Floating Status / Telemetry Ribbon */}
+      {/* Floating Status Ribbon */}
       <div
         style={{
           height: '36px',
@@ -152,8 +163,8 @@ const AppContent: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          background: 'rgba(10,18,34,0.7)',
-          borderBottom: '1px solid var(--border-subtle)',
+          background: 'var(--surface-elevated)',
+          borderBottom: '1px solid var(--border)',
           fontSize: '11px',
         }}
       >
@@ -164,46 +175,46 @@ const AppContent: React.FC = () => {
                 width: '7px',
                 height: '7px',
                 borderRadius: '50%',
-                background: stateColors[sessionState] || '#64748b',
-                boxShadow: `0 0 6px ${stateColors[sessionState]}`,
+                background: isConnected ? 'var(--secondary)' : 'var(--text-muted)',
               }}
             />
             <span style={{ color: 'var(--text-muted)' }}>State:</span>
-            <strong style={{ color: stateColors[sessionState], fontFamily: 'var(--font-mono)' }}>
+            <strong style={{ color: isConnected ? 'var(--accent)' : 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
               {sessionState}
             </strong>
           </div>
 
-          <div style={{ width: '1px', height: '14px', background: 'var(--border-subtle)' }} />
+          <div style={{ width: '1px', height: '14px', background: 'var(--border)' }} />
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ color: 'var(--text-muted)' }}>Emotion:</span>
-            <strong style={{ color: '#f1f5f9' }}>{emotionLabel}</strong>
+            <strong style={{ color: 'var(--text)' }}>{emotionLabel}</strong>
           </div>
 
-          <div style={{ width: '1px', height: '14px', background: 'var(--border-subtle)' }} />
+          <div style={{ width: '1px', height: '14px', background: 'var(--border)' }} />
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ color: 'var(--text-muted)' }}>Latency (TTFA):</span>
-            <strong style={{ color: ttfa > 0 && ttfa <= 800 ? '#34d399' : '#fbbf24', fontFamily: 'var(--font-mono)' }}>
+            <span style={{ color: 'var(--text-muted)' }}>TTFA:</span>
+            <strong style={{ color: 'var(--accent)', fontFamily: 'var(--font-mono)' }}>
               {ttfa > 0 ? `${ttfa}ms` : '—'}
             </strong>
           </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)' }}>
-          <span>aiortc • Whisper • Wav2Vec2 • Groq • Cartesia</span>
+          <span>Theme: <strong style={{ color: 'var(--accent)' }}>{resolvedTheme}</strong></span>
+          <span>• Mode: <strong>{themePreference}</strong></span>
         </div>
       </div>
 
-      {/* Error / Status Notice */}
+      {/* Status Notice */}
       {statusNotice && (
         <div
           style={{
             padding: '8px 24px',
-            background: 'rgba(244,63,94,0.1)',
-            borderBottom: '1px solid rgba(244,63,94,0.25)',
-            color: '#fb7185',
+            background: 'var(--danger-bg)',
+            borderBottom: '1px solid var(--danger-border)',
+            color: 'var(--danger-text)',
             fontSize: '12px',
             display: 'flex',
             justifyContent: 'space-between',
@@ -213,7 +224,7 @@ const AppContent: React.FC = () => {
           <span>⚠️ {statusNotice}</span>
           <button
             onClick={() => setStatusNotice(null)}
-            style={{ background: 'transparent', border: 'none', color: '#fb7185', cursor: 'pointer' }}
+            style={{ background: 'transparent', border: 'none', color: 'var(--danger-text)', cursor: 'pointer' }}
           >
             ✕
           </button>
@@ -234,6 +245,8 @@ const AppContent: React.FC = () => {
         {currentPage === 'analytics' && <AnalyticsPage />}
         {currentPage === 'scorecard' && <ScorecardPage />}
         {currentPage === 'telemetry' && <TelemetryPage />}
+        {currentPage === 'settings' && <SettingsPage />}
+        {currentPage === 'devcolors' && <DevColorsPage />}
       </main>
     </div>
   );
@@ -241,8 +254,10 @@ const AppContent: React.FC = () => {
 
 export const App: React.FC = () => {
   return (
-    <WebRTCProvider>
-      <AppContent />
-    </WebRTCProvider>
+    <ThemeProvider>
+      <WebRTCProvider>
+        <AppContent />
+      </WebRTCProvider>
+    </ThemeProvider>
   );
 };

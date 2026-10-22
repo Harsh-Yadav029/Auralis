@@ -17,29 +17,25 @@ export const EmotionQuadrantRadar: React.FC<EmotionQuadrantRadarProps> = ({
   const posY = Math.max(8, Math.min(92, (1 - arousal) * 100));
 
   const getQuadrantLabel = () => {
-    if (arousal >= 0.5 && valence < 0) return { name: 'PANIC / RAGE', color: '#f87171' };
-    if (arousal >= 0.5 && valence >= 0) return { name: 'EXCITED / ENGAGED', color: '#fbbf24' };
-    if (arousal < 0.5 && valence < 0) return { name: 'DEPRESSED / WITHDRAWN', color: '#a78bfa' };
-    return { name: 'CALM / COMPLIANT', color: '#34d399' };
+    if (arousal >= 0.5 && valence < 0) return { name: 'PANIC / RAGE', color: 'var(--danger-text)', border: 'var(--danger-border)' };
+    if (arousal >= 0.5 && valence >= 0) return { name: 'EXCITED / ENGAGED', color: 'var(--accent)', border: 'var(--border-interactive)' };
+    if (arousal < 0.5 && valence < 0) return { name: 'DEPRESSED / WITHDRAWN', color: 'var(--text-muted)', border: 'var(--border)' };
+    return { name: 'CALM / COMPLIANT', color: 'var(--secondary)', border: 'var(--secondary)' };
   };
 
   const quad = getQuadrantLabel();
 
   return (
-    <div style={{
-      background: 'rgba(15, 23, 42, 0.8)',
-      borderRadius: '16px',
-      border: '1px solid rgba(51, 65, 85, 0.6)',
+    <div className="card" style={{
       padding: '16px',
       display: 'flex',
       flexDirection: 'column',
       gap: '12px',
-      backdropFilter: 'blur(12px)'
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: quad.color, boxShadow: `0 0 8px ${quad.color}` }} />
-          <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.08em', color: '#94a3b8', textTransform: 'uppercase' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: quad.color }} />
+          <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
             2D Circumplex Emotion Radar
           </span>
         </div>
@@ -53,73 +49,59 @@ export const EmotionQuadrantRadar: React.FC<EmotionQuadrantRadarProps> = ({
         position: 'relative',
         width: '100%',
         height: '180px',
-        background: 'radial-gradient(circle at center, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.9) 100%)',
+        background: 'var(--surface-elevated)',
         borderRadius: '12px',
-        border: '1px solid rgba(56, 189, 248, 0.15)',
+        border: '1px solid var(--border-interactive)',
         overflow: 'hidden'
       }}>
-        {/* Coordinate Center Crosshairs */}
-        <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: 'rgba(56, 189, 248, 0.2)', borderTop: '1px dashed rgba(56, 189, 248, 0.3)' }} />
-        <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: '1px', background: 'rgba(56, 189, 248, 0.2)', borderLeft: '1px dashed rgba(56, 189, 248, 0.3)' }} />
+        {/* Axes */}
+        <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: 'var(--border)' }} />
+        <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: '1px', background: 'var(--border)' }} />
 
-        {/* Quadrant Watermark Labels */}
-        <div style={{ position: 'absolute', top: '8px', left: '10px', fontSize: '9px', color: 'rgba(248, 113, 113, 0.6)', fontWeight: 600 }}>PANIC / AGITATION</div>
-        <div style={{ position: 'absolute', top: '8px', right: '10px', fontSize: '9px', color: 'rgba(251, 191, 36, 0.6)', fontWeight: 600 }}>ENGAGED / ALERT</div>
-        <div style={{ position: 'absolute', bottom: '8px', left: '10px', fontSize: '9px', color: 'rgba(167, 139, 250, 0.6)', fontWeight: 600 }}>DEPRESSED / ISOLATED</div>
-        <div style={{ position: 'absolute', bottom: '8px', right: '10px', fontSize: '9px', color: 'rgba(52, 211, 153, 0.6)', fontWeight: 600 }}>CALM / GROUNDED</div>
+        {/* Labels */}
+        <span style={{ position: 'absolute', top: '6px', left: '50%', transform: 'translateX(-50%)', fontSize: '9px', fontWeight: 700, color: 'var(--text-muted)' }}>
+          HIGH AROUSAL (+1.0)
+        </span>
+        <span style={{ position: 'absolute', bottom: '6px', left: '50%', transform: 'translateX(-50%)', fontSize: '9px', fontWeight: 700, color: 'var(--text-muted)' }}>
+          LOW AROUSAL (0.0)
+        </span>
+        <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', fontSize: '9px', fontWeight: 700, color: 'var(--text-muted)' }}>
+          NEG VALENCE (-1.0)
+        </span>
+        <span style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', fontSize: '9px', fontWeight: 700, color: 'var(--text-muted)' }}>
+          POS VALENCE (+1.0)
+        </span>
 
-        {/* Concentric Radar Rings */}
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '110px',
-          height: '110px',
-          borderRadius: '50%',
-          border: '1px solid rgba(56, 189, 248, 0.1)'
-        }} />
+        {/* Quadrant corner tags */}
+        <span style={{ position: 'absolute', top: '8px', left: '8px', fontSize: '9px', color: 'var(--danger-text)', fontWeight: 600 }}>PANIC / RAGE</span>
+        <span style={{ position: 'absolute', top: '8px', right: '8px', fontSize: '9px', color: 'var(--accent)', fontWeight: 600 }}>EXCITED</span>
+        <span style={{ position: 'absolute', bottom: '8px', left: '8px', fontSize: '9px', color: 'var(--text-muted)', fontWeight: 600 }}>DEPRESSED</span>
+        <span style={{ position: 'absolute', bottom: '8px', right: '8px', fontSize: '9px', color: 'var(--secondary)', fontWeight: 600 }}>CALM</span>
 
-        {/* Active Laser Target Blip */}
+        {/* Dynamic Coordinate Point */}
         <div style={{
           position: 'absolute',
           left: `${posX}%`,
           top: `${posY}%`,
           transform: 'translate(-50%, -50%)',
-          transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-          pointerEvents: 'none'
-        }}>
-          {/* Outer Ripple */}
-          <div style={{
-            position: 'absolute',
-            inset: '-6px',
-            borderRadius: '50%',
-            background: quad.color,
-            opacity: 0.35,
-            animation: 'pulse 1.2s infinite'
-          }} />
-          {/* Inner Core */}
-          <div style={{
-            width: '12px',
-            height: '12px',
-            borderRadius: '50%',
-            background: quad.color,
-            boxShadow: `0 0 14px ${quad.color}`,
-            border: '2px solid #ffffff'
-          }} />
-        </div>
+          width: '18px',
+          height: '18px',
+          borderRadius: '50%',
+          background: quad.color,
+          border: '2px solid var(--surface)',
+          boxShadow: '0 0 12px var(--orb-glow)',
+          transition: 'all 0.3s ease-out',
+          zIndex: 10
+        }} />
       </div>
 
-      {/* Numerical Coordinate Metrics */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-        <div style={{ background: 'rgba(2, 6, 23, 0.6)', padding: '6px 10px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: '10px', color: '#64748b' }}>Arousal:</span>
-          <span style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'monospace', color: '#f87171' }}>{(arousal * 100).toFixed(0)}%</span>
-        </div>
-        <div style={{ background: 'rgba(2, 6, 23, 0.6)', padding: '6px 10px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: '10px', color: '#64748b' }}>Valence:</span>
-          <span style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'monospace', color: '#38bdf8' }}>{valence > 0 ? `+${valence.toFixed(2)}` : valence.toFixed(2)}</span>
-        </div>
+      {/* Numerical Indicators */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', paddingTop: '4px' }}>
+        <span>Valence: <strong style={{ color: 'var(--text)' }}>{valence.toFixed(2)}</strong></span>
+        <span>Arousal: <strong style={{ color: 'var(--text)' }}>{arousal.toFixed(2)}</strong></span>
+        <span className="badge" style={{ borderColor: quad.border, color: quad.color }}>
+          {quad.name}
+        </span>
       </div>
     </div>
   );
