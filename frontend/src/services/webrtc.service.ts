@@ -44,6 +44,7 @@ export class AuralisWebRTCClient {
         this.remoteAudioElement = new Audio();
         this.remoteAudioElement.autoplay = true;
       }
+
       this.remoteAudioElement.srcObject = event.streams[0];
       this.remoteAudioElement.play().catch(console.error);
       if (this.config.onRemoteStream) {
@@ -97,9 +98,11 @@ export class AuralisWebRTCClient {
         const msg = JSON.parse(event.data);
         if (msg.type === "answer") {
           await this.pc?.setRemoteDescription(new RTCSessionDescription(msg));
-        } else if (msg.type === "candidate") {
+        }
+        else if (msg.type === "candidate") {
           await this.pc?.addIceCandidate(new RTCIceCandidate(msg.candidate));
-        } else if (msg.event) {
+        }
+        else if (msg.event) {
           this.handleEvent(msg);
         }
       } catch (e) {
