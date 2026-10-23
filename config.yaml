@@ -1,0 +1,48 @@
+# Auralis Unified Configuration
+# Designed for local execution on Windows 11, RTX 3050 A (4 GB VRAM ceiling)
+
+system:
+  device: "cuda"            # "cuda" | "cpu"
+  vram_limit_mb: 3600       # Safety trigger at 3.6 GB
+  log_level: "INFO"
+  log_json: true
+
+audio:
+  sample_rate: 16000        # Standard 16 kHz mono PCM
+  channels: 1
+  frame_duration_ms: 20     # 20 ms frames (320 samples per frame)
+  bytes_per_sample: 2       # 16-bit PCM
+
+languages:
+  default: "en"             # "en" | "hi"
+  supported:
+    - "en"
+    - "hi"
+
+providers:
+  stt:
+    provider: "faster_whisper"
+    model_size: "small"     # "distil-small.en" or "small" (supports Hindi)
+    compute_type: "int8"
+    device: "cuda"
+
+  ser:
+    provider: "wav2vec2"
+    model_name: "audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim"
+    device: "cpu"           # Always CPU to preserve VRAM for LLM
+    ema_alpha: 0.3          # Exponential moving average smoothing
+    window_duration_sec: 1.5
+
+  llm:
+    provider: "ollama"
+    model_name: "qwen2.5:7b-instruct-q4_K_M"
+    base_url: "http://localhost:11434"
+    max_tokens: 100
+    temperature: 0.3
+
+  tts:
+    provider: "kokoro"
+    device: "cuda"
+    voices:
+      en: "af_sarah"
+      hi: "hi_female"       # Checked against installed Kokoro local voice manifests
