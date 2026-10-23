@@ -28,10 +28,16 @@ def test_ollama_reachable():
 # ---------------------------------------------------------------------------
 def test_whisper_transcribes_silence():
     """FasterWhisperEngine must not raise on 320 samples of silence."""
+    import sys, os
+
+    ml_service_path = os.path.join(os.path.dirname(__file__), "..", "ml-service")
+    if ml_service_path not in sys.path:
+        sys.path.insert(0, ml_service_path)
+
     try:
-        from ml_service_src.models.asr_whisper import FasterWhisperEngine  # type: ignore
-    except ModuleNotFoundError:
-        pytest.skip("ml-service not on PYTHONPATH — run from repo root with ml-service/src exposed")
+        from src.models.asr_whisper import FasterWhisperEngine  # noqa: E402
+    except ImportError as exc:
+        pytest.skip(f"ml-service import failed: {exc}")
 
     engine = FasterWhisperEngine(model_size="tiny", compute_type="int8", device="cpu")
     silence = np.zeros(320, dtype=np.int16)
