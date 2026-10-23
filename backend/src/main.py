@@ -29,8 +29,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-llm_engine = GroqContextEngine()
-tts_engine = CartesiaTTSService()
+llm_engine = GroqContextEngine(api_key=settings.groq_api_key)
+tts_engine = CartesiaTTSService(api_key=settings.cartesia_api_key)
 bcsm_scorer = BCSMScorer()
 fusion_engine = EmotionFusionEngine()
 scenario_manager = ScenarioManager()

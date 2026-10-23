@@ -51,8 +51,16 @@ class MLAudioClient:
         except Exception as e:
             logger.error(f"Error in ML Client listen loop: {e}")
 
+    def is_connected(self) -> bool:
+        if not self.ws:
+            return False
+        if hasattr(self.ws, "state"):
+            from websockets.protocol import State
+            return self.ws.state == State.OPEN
+        return not getattr(self.ws, "closed", True)
+
     async def send_pcm_chunk(self, pcm_bytes: bytes):
-        if self.ws and not self.ws.closed:
+        if self.is_connected():
             try:
                 await self.ws.send(pcm_bytes)
             except Exception as e:
@@ -62,5 +70,10 @@ class MLAudioClient:
         self._running = False
         if self.receive_task:
             self.receive_task.cancel()
-        if self.ws and not self.ws.closed:
-            await self.ws.close()
+        if self.ws:
+            try:
+                await self.ws.close()
+            except Exception:
+                pass
+            finally:
+                self.ws = None

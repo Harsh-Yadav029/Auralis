@@ -7,7 +7,8 @@ class GroqContextEngine:
     def __init__(self, api_key: str = None):
         key = api_key or os.getenv("GROQ_API_KEY", "")
         self.client = AsyncGroq(api_key=key) if key else None
-        self.model = "llama-3.1-8b-instant"
+        # Primary verified active model on Groq
+        self.model = os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b")
 
     def build_system_prompt(self, emotion_data: dict, fusion_data: dict = None, scenario: dict = None) -> str:
         arousal = emotion_data.get('arousal', 0.5)
