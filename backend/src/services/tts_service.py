@@ -7,10 +7,9 @@ logger = logging.getLogger("auralis.tts")
 # kokoro-onnx outputs at 24kHz; gateway resamples to 48kHz for WebRTC
 _KOKORO_SAMPLE_RATE = 24000
 
-# HuggingFace repo for Kokoro ONNX model files
-_HF_REPO = "hexgrad/Kokoro-82M"
-_MODEL_FILE = "kokoro-v1_0.onnx"
-_VOICES_FILE = "voices.bin"
+# Kokoro ONNX model release assets from thewh1teagle/kokoro-onnx v1.0
+_MODEL_URL = "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx"
+_VOICES_URL = "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin"
 
 # Map internal voice names to kokoro-onnx voice IDs
 _VOICE_MAP = {
@@ -23,7 +22,7 @@ _VOICE_MAP = {
 class KokoroTTSService:
     """
     Local Kokoro TTS using kokoro-onnx (Python 3.13 compatible).
-    Model files are auto-downloaded once from HuggingFace and cached.
+    Model files are auto-downloaded once from GitHub Releases and cached locally.
     Outputs 24kHz float32 → converted to 16kHz int16 for WebRTC pipeline.
     """
 
@@ -40,20 +39,29 @@ class KokoroTTSService:
         self._kokoro = None
         self._load_model()
 
-    def _download_model_files(self) -> tuple[str, str]:
-        """Download kokoro ONNX model + voices from HF Hub (cached after first run)."""
-        from huggingface_hub import hf_hub_download
+    def _download_file_cached(self, url: str, filename: str) -> str:
+        """Download file to local cache directory if not already present."""
+        import os
+        import urllib.request
 
-        model_path = hf_hub_download(repo_id=_HF_REPO, filename=_MODEL_FILE)
-        voices_path = hf_hub_download(repo_id=_HF_REPO, filename=_VOICES_FILE)
-        return model_path, voices_path
+        cache_dir = os.path.join(os.path.expanduser("~"), ".cache", "kokoro-onnx")
+        os.makedirs(cache_dir, exist_ok=True)
+        dest_path = os.path.join(cache_dir, filename)
+
+        if not os.path.exists(dest_path) or os.path.getsize(dest_path) == 0:
+            logger.info(f"Downloading Kokoro asset {filename}...")
+            urllib.request.urlretrieve(url, dest_path)
+            logger.info(f"Downloaded {filename} to {dest_path}")
+
+        return dest_path
 
     def _load_model(self):
         try:
             from kokoro_onnx import Kokoro
 
-            logger.info("Downloading / loading Kokoro ONNX model (first run may take ~30s)...")
-            model_path, voices_path = self._download_model_files()
+            logger.info("Loading Kokoro ONNX model (first run may download ~300MB)...")
+            model_path = self._download_file_cached(_MODEL_URL, "kokoro-v1.0.onnx")
+            voices_path = self._download_file_cached(_VOICES_URL, "voices-v1.0.bin")
             self._kokoro = Kokoro(model_path=model_path, voices_path=voices_path)
             logger.info("Kokoro TTS ready (kokoro-onnx)")
         except ImportError:

@@ -27,56 +27,74 @@ def resample_to_16k(audio_frame: AudioFrame) -> np.ndarray:
 
 class CustomOutboundAudioTrack(MediaStreamTrack):
     """Outbound WebRTC track streaming generated TTS PCM audio chunks to browser."""
+
     kind = "audio"
+    SAMPLE_RATE = 48000
+    FRAME_SAMPLES = 960  # 20ms at 48kHz
 
     def __init__(self):
         super().__init__()
-        self.queue = asyncio.Queue()
+        self._queue: asyncio.Queue = asyncio.Queue(maxsize=200)
         self._pts = 0
-        self.sample_rate = 48000
-        self.channels = 1
-        self._silent_frame = np.zeros(960, dtype=np.int16)
+        self._silent_frame = np.zeros(self.FRAME_SAMPLES, dtype=np.int16)
+        # Accumulation buffer for partial resampled chunks
+        self._buffer = np.array([], dtype=np.int16)
 
-    async def add_pcm_chunk(self, pcm_data_16k: np.ndarray):
-        """Resample 16kHz TTS output to 48kHz and push to outbound WebRTC queue in 20ms frames."""
-        if pcm_data_16k.size == 0:
+    async def add_pcm_chunk(self, pcm_16k: np.ndarray):
+        """
+        Accept 16kHz mono int16 PCM, resample to 48kHz, enqueue complete 20ms frames.
+        Accumulates partial frames in a buffer — handles any input chunk size.
+        """
+        if pcm_16k is None or pcm_16k.size == 0:
             return
 
-        x_old = np.linspace(0, 1, len(pcm_data_16k))
-        x_new = np.linspace(0, 1, len(pcm_data_16k) * 3)
-        resampled = np.interp(x_new, x_old, pcm_data_16k).astype(np.int16)
+        pcm_16k = pcm_16k.astype(np.int16).flatten()
 
-        # Split into 960-sample (20ms) frames
-        frame_size = 960
-        for i in range(0, len(resampled), frame_size):
-            chunk = resampled[i:i + frame_size]
-            if len(chunk) < frame_size:
-                padded = np.zeros(frame_size, dtype=np.int16)
-                padded[:len(chunk)] = chunk
-                chunk = padded
-            await self.queue.put(chunk)
+        # Resample 16kHz → 48kHz (integer ×3 ratio — no quality loss)
+        n_out = len(pcm_16k) * 3
+        x_old = np.linspace(0, 1, len(pcm_16k))
+        x_new = np.linspace(0, 1, n_out)
+        resampled = np.interp(x_new, x_old, pcm_16k).astype(np.int16)
+
+        # Append to accumulation buffer
+        self._buffer = np.concatenate([self._buffer, resampled])
+
+        # Drain complete 960-sample frames from buffer
+        while len(self._buffer) >= self.FRAME_SAMPLES:
+            frame_data = self._buffer[: self.FRAME_SAMPLES]
+            self._buffer = self._buffer[self.FRAME_SAMPLES :]
+            try:
+                self._queue.put_nowait(frame_data)
+            except asyncio.QueueFull:
+                # Drop oldest frame on overflow to keep latency low
+                try:
+                    self._queue.get_nowait()
+                except asyncio.QueueEmpty:
+                    pass
+                self._queue.put_nowait(frame_data)
 
     async def recv(self):
-        frame_size = 960  # 20ms frame at 48kHz
+        """Return next 20ms AudioFrame, or silence if queue is empty."""
         try:
-            # Wait up to 20ms for audio, otherwise return silent frame
-            data = await asyncio.wait_for(self.queue.get(), timeout=0.02)
+            data = await asyncio.wait_for(self._queue.get(), timeout=0.02)
         except (asyncio.TimeoutError, asyncio.QueueEmpty):
             data = self._silent_frame
 
-        frame = AudioFrame(format='s16', layout='mono', samples=frame_size)
+        frame = AudioFrame(format="s16", layout="mono", samples=self.FRAME_SAMPLES)
         frame.planes[0].update(data.tobytes())
-        frame.sample_rate = self.sample_rate
+        frame.sample_rate = self.SAMPLE_RATE
         frame.pts = self._pts
-        frame.time_base = fractions.Fraction(1, self.sample_rate)
-        self._pts += frame_size
+        frame.time_base = fractions.Fraction(1, self.SAMPLE_RATE)
+        self._pts += self.FRAME_SAMPLES
         return frame
 
     def clear(self):
-        """Flush audio queue during barge-in interruption."""
-        while not self.queue.empty():
+        """Flush all queued + buffered audio during barge-in interrupt."""
+        self._buffer = np.array([], dtype=np.int16)
+        while not self._queue.empty():
             try:
-                self.queue.get_nowait()
+                self._queue.get_nowait()
             except asyncio.QueueEmpty:
                 break
+
 
