@@ -26,8 +26,13 @@ app.add_middleware(
 )
 
 # Global model instances for shared inference
-asr_engine = FasterWhisperEngine(model_size=settings.whisper_model, compute_type=settings.compute_type)
-emotion_classifier = Wav2Vec2EmotionClassifier()
+asr_engine = FasterWhisperEngine(
+    model_size=settings.whisper_model,
+    compute_type=settings.compute_type,
+    device=settings.whisper_device,
+    language=settings.whisper_language,
+)
+emotion_classifier = Wav2Vec2EmotionClassifier(ema_alpha=settings.emotion_ema_alpha)
 
 class ProcessAudioRequest(BaseModel):
     pcm16_base64: str = ""
@@ -67,9 +72,9 @@ async def websocket_audio_stream(websocket: WebSocket):
     vad_detector = SileroVADDetector(threshold=settings.vad_threshold, hangover_ms=settings.hangover_ms)
     byte_buffer = bytearray()
     speech_frames = []
-    
-    FRAME_SAMPLES = 480  # 30ms at 16kHz
-    FRAME_BYTES = FRAME_SAMPLES * 2  # 16-bit signed LE PCM (2 bytes/sample)
+
+    FRAME_SAMPLES = 512  # 32ms at 16kHz — required by Silero VAD v5
+    FRAME_BYTES = FRAME_SAMPLES * 2  # int16 LE = 2 bytes/sample
 
     try:
         while True:
@@ -125,7 +130,8 @@ async def websocket_audio_stream(websocket: WebSocket):
                     if payload.get("type") == "RESET":
                         byte_buffer.clear()
                         speech_frames.clear()
-                        vad_detector = SileroVADDetector(threshold=settings.vad_threshold, hangover_ms=settings.hangover_ms)
+                        vad_detector.reset()
+                        emotion_classifier.reset_ema()
                     elif payload.get("type") == "PING":
                         await websocket.send_text(json.dumps({"type": "PONG"}))
                 except json.JSONDecodeError:

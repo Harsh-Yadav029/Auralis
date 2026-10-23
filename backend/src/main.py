@@ -3,14 +3,14 @@ import json
 import logging
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate
+from aiortc import RTCPeerConnection, RTCSessionDescription
 from aiortc.sdp import candidate_from_sdp
 
 from src.config import settings
 from src.services.webrtc_service import CustomOutboundAudioTrack, resample_to_16k
 from src.services.state_manager import Orchestrator
-from src.services.llm_service import GroqContextEngine
-from src.services.tts_service import CartesiaTTSService
+from src.services.llm_service import OllamaLLMEngine
+from src.services.tts_service import KokoroTTSService
 from src.services.ml_client import MLAudioClient
 from src.services.scoring_service import BCSMScorer
 from src.services.fusion_engine import EmotionFusionEngine
@@ -29,8 +29,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-llm_engine = GroqContextEngine(api_key=settings.groq_api_key)
-tts_engine = CartesiaTTSService(api_key=settings.cartesia_api_key)
+llm_engine = OllamaLLMEngine(
+    base_url=settings.ollama_base_url,
+    model=settings.ollama_model,
+)
+tts_engine = KokoroTTSService(
+    voice_en=settings.kokoro_voice_en,
+    voice_hi=settings.kokoro_voice_hi,
+    device=settings.kokoro_device,
+)
 bcsm_scorer = BCSMScorer()
 fusion_engine = EmotionFusionEngine()
 scenario_manager = ScenarioManager()
@@ -50,7 +57,7 @@ async def get_scenarios():
 async def signaling_endpoint(websocket: WebSocket):
     await websocket.accept()
     logger.info("WebRTC Signaling Client Connected")
-    
+
     pc = RTCPeerConnection()
     outbound_track = CustomOutboundAudioTrack()
     pc.addTrack(outbound_track)
@@ -62,7 +69,7 @@ async def signaling_endpoint(websocket: WebSocket):
 
 
 
-    
+
     # Establish connection to ML Audio Microservice
     ws_ml_url = settings.ml_service_url.replace("http://", "ws://").replace("https://", "wss://").rstrip("/") + "/ws/stream"
     ml_client = MLAudioClient(ws_url=ws_ml_url)
@@ -81,7 +88,7 @@ async def signaling_endpoint(websocket: WebSocket):
         nonlocal inbound_audio_task
         if track.kind == "audio":
             logger.info("Microphone audio track received from browser — streaming to ML Engine")
-            
+
             async def process_inbound_audio():
                 try:
                     while True:
@@ -106,7 +113,7 @@ async def signaling_endpoint(websocket: WebSocket):
                 await pc.setRemoteDescription(offer)
                 answer = await pc.createAnswer()
                 await pc.setLocalDescription(answer)
-                
+
                 await websocket.send_text(json.dumps({
                     "type": "answer",
                     "sdp": pc.localDescription.sdp

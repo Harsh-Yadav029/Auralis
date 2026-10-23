@@ -83,7 +83,7 @@ Do NOT output any markdown, conversational remarks, or extra keys."""
             )
             raw_text = completion.choices[0].message.content or "{}"
             result = json.loads(raw_text)
-            
+
             # Ensure valid types and clamp bounds
             stage = int(result.get("stage", 1))
             stage = max(1, min(5, stage))

@@ -8,7 +8,7 @@ logger = logging.getLogger("auralis.ml_client")
 
 class MLAudioClient:
     """Client for streaming raw PCM audio frames to the dedicated ML Audio Microservice."""
-    
+
     def __init__(self, ws_url: str = "ws://localhost:8001/ws/stream"):
         self.ws_url = ws_url
         self.ws: Optional[websockets.WebSocketClientProtocol] = None
@@ -35,17 +35,17 @@ class MLAudioClient:
                 msg = await self.ws.recv()
                 data = json.loads(msg)
                 event = data.get("event")
-                
+
                 if event == "SPEECH_START":
                     if self.on_speech_start:
                         self.on_speech_start()
-                        
+
                 elif event == "TURN_COMPLETE":
                     transcript = data.get("transcript", "")
                     emotion = data.get("emotion", {"primary_label": "neutral", "arousal": 0.5, "valence": 0.0})
                     if self.on_turn_complete:
                         asyncio.create_task(self.on_turn_complete(transcript, emotion))
-                        
+
         except websockets.exceptions.ConnectionClosed:
             logger.info("ML Service WebSocket closed.")
         except Exception as e:

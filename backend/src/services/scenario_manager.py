@@ -2,7 +2,7 @@ from typing import Dict, Any
 
 class ScenarioManager:
     """
-    Manages crisis simulation personas, background incident dossiers, 
+    Manages crisis simulation personas, background incident dossiers,
     tactical negotiation objectives, and dynamic LLM system contexts.
     """
 

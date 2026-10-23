@@ -40,7 +40,7 @@ class Orchestrator:
             logger.info("Barge-in detected! Halting AI generation in sub-150ms...")
             if self.current_task and not self.current_task.done():
                 self.current_task.cancel()
-            
+
             # Flush outbound WebRTC audio queue
             self.outbound_track.clear()
             self.state = "INTERRUPTED"
@@ -49,7 +49,7 @@ class Orchestrator:
     async def process_user_turn(self, transcript: str, emotion_data: dict, llm_engine, tts_engine):
         if not transcript.strip():
             return
-            
+
         self.state = "THINKING"
         self.emit_event("STATE_CHANGE", {"state": "THINKING"})
         self.emit_event("TRANSCRIPT", {"text": transcript})
@@ -63,7 +63,7 @@ class Orchestrator:
         if hasattr(self, "fusion_engine") and self.fusion_engine:
             fusion_data = self.fusion_engine.fuse_and_evaluate(transcript, emotion_data)
             self.emit_event("FUSION", fusion_data)
-        
+
         active_scenario = None
         if hasattr(self, "scenario_manager") and self.scenario_manager:
             active_scenario = self.scenario_manager.get_active_scenario()
@@ -76,7 +76,7 @@ class Orchestrator:
             async for clause in llm_engine.stream_deescalation_response(transcript, emotion_data, [], fusion_data, active_scenario):
                 self.emit_event("AI_TEXT", {"text": clause})
 
-                
+
                 async def on_audio_chunk(pcm_chunk):
                     nonlocal first_audio_emitted
                     if not first_audio_emitted:
@@ -86,11 +86,11 @@ class Orchestrator:
                         first_audio_emitted = True
                         self.state = "SPEAKING"
                         self.emit_event("STATE_CHANGE", {"state": "SPEAKING"})
-                    
+
                     await self.outbound_track.add_pcm_chunk(pcm_chunk)
 
                 await tts_engine.stream_speech(clause, emotion_data.get("arousal", 0.5), on_audio_chunk)
-            
+
             self.state = "IDLE"
             self.emit_event("STATE_CHANGE", {"state": "IDLE"})
 

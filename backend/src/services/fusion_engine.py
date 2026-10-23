@@ -5,19 +5,19 @@ class EmotionFusionEngine:
     """
     Dual-stream emotion fusion engine that detects cognitive dissonance and
     incongruence between acoustic soundwaves and semantic text sentiment.
-    
+
     Example: Trainee speaks 'I am completely calm and under control', but Wav2Vec2
     registers Arousal = 0.94 and Valence = -0.75 (high panic/agitation).
     Flags: SUPPRESSED_PANIC or FALSE_COMPLIANCE.
     """
-    
+
     POSITIVE_WORDS = {
-        "calm", "fine", "okay", "peace", "relax", "good", "safe", "control", 
+        "calm", "fine", "okay", "peace", "relax", "good", "safe", "control",
         "agree", "cooperate", "promise", "help", "understand", "listen"
     }
-    
+
     NEGATIVE_WORDS = {
-        "angry", "furious", "kill", "die", "gun", "shoot", "scared", "afraid", 
+        "angry", "furious", "kill", "die", "gun", "shoot", "scared", "afraid",
         "hurt", "blood", "stop", "never", "hate", "destroy", "hostage"
     }
 

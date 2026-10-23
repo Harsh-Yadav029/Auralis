@@ -12,15 +12,15 @@ def resample_to_16k(audio_frame: AudioFrame) -> np.ndarray:
         array = np.mean(array, axis=0)
     elif array.ndim > 1:
         array = array.flatten()
-        
+
     src_rate = audio_frame.sample_rate or 48000
     if src_rate == 16000:
         return array.astype(np.int16)
-        
+
     num_samples = int(len(array) * 16000 / src_rate)
     if num_samples <= 0:
         return np.array([], dtype=np.int16)
-        
+
     x_old = np.linspace(0, 1, len(array))
     x_new = np.linspace(0, 1, num_samples)
     return np.interp(x_new, x_old, array).astype(np.int16)
@@ -41,11 +41,11 @@ class CustomOutboundAudioTrack(MediaStreamTrack):
         """Resample 16kHz TTS output to 48kHz and push to outbound WebRTC queue in 20ms frames."""
         if pcm_data_16k.size == 0:
             return
-        
+
         x_old = np.linspace(0, 1, len(pcm_data_16k))
         x_new = np.linspace(0, 1, len(pcm_data_16k) * 3)
         resampled = np.interp(x_new, x_old, pcm_data_16k).astype(np.int16)
-        
+
         # Split into 960-sample (20ms) frames
         frame_size = 960
         for i in range(0, len(resampled), frame_size):
