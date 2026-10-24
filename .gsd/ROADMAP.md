@@ -24,6 +24,6 @@
 - [x] Phase 4.3: Emotion-conditioned TTS prosody (cadence and pitch F0 modulation based on trainee arousal).
 - [x] Phase 4.4: Multi-scenario incident selector (Hostage / Bridge Jumper / Cyber Extortion).
 
-### Milestone 5: Production Infrastructure & Benchmarking
-- [ ] Phase 5.1: Docker Compose environment, multi-stage GPU Dockerfiles, and Coturn TURN server config.
-- [ ] Phase 5.2: End-to-end TTFA latency measurement harness and automated test suite.
+### Milestone 5: Production Infrastructure & Benchmarking [DONE]
+- [x] Phase 5.1: Docker Compose environment, multi-stage GPU Dockerfiles, and Coturn TURN server config.
+- [x] Phase 5.2: End-to-end TTFA latency measurement harness and automated test suite.

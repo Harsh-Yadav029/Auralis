@@ -1,0 +1,36 @@
+{
+  "iterations": 3,
+  "p50_ttfa_ms": 2942.82,
+  "p95_ttfa_ms": 3127.45,
+  "p99_ttfa_ms": 3143.87,
+  "min_ttfa_ms": 2415.78,
+  "max_ttfa_ms": 3147.97,
+  "avg_ttft_ms": 1662.99,
+  "gate_800ms_passed": false,
+  "turns": [
+    {
+      "ttft_ms": 1653.73,
+      "tts_chunk_ms": 1289.09,
+      "ttfa_ms": 2942.82,
+      "total_turn_ms": 4172.56,
+      "clause_count": 2,
+      "total_audio_samples": 62463
+    },
+    {
+      "ttft_ms": 1903.59,
+      "tts_chunk_ms": 1244.38,
+      "ttfa_ms": 3147.97,
+      "total_turn_ms": 4841.26,
+      "clause_count": 3,
+      "total_audio_samples": 69289
+    },
+    {
+      "ttft_ms": 1431.64,
+      "tts_chunk_ms": 984.14,
+      "ttfa_ms": 2415.78,
+      "total_turn_ms": 5344.07,
+      "clause_count": 3,
+      "total_audio_samples": 100351
+    }
+  ]
+}

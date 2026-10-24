@@ -6,9 +6,11 @@ services:
       context: ../../frontend
       dockerfile: Dockerfile
     ports:
-      - "5173:5173"
+      - "5173:80"
     environment:
       - VITE_SIGNALING_URL=ws://localhost:8000/ws/signaling
+    depends_on:
+      - auralis-gateway
 
   auralis-gateway:
     build:
@@ -19,8 +21,12 @@ services:
       - "50000-50050:50000-50050/udp"
     environment:
       - ML_SERVICE_URL=http://auralis-ml-service:8001
-      - GROQ_API_KEY=${GROQ_API_KEY}
-      - CARTESIA_API_KEY=${CARTESIA_API_KEY}
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - OLLAMA_MODEL=qwen2.5:7b-instruct-q4_K_M
+      - KOKORO_VOICE_EN=af_sarah
+      - KOKORO_VOICE_HI=af_sarah
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - auralis-ml-service
 
@@ -31,8 +37,9 @@ services:
     ports:
       - "8001:8001"
     environment:
-      - WHISPER_MODEL=distil-small.en
+      - WHISPER_MODEL=tiny
       - COMPUTE_TYPE=int8
+      - DEVICE=cpu
 
   coturn:
     image: coturn/coturn:4.6.2
