@@ -5,19 +5,9 @@ Verifies Ollama generation, Kokoro synthesis, BCSM scoring, and full turn pipeli
 Run: pytest tests/test_phase2_integration.py -v
 """
 import asyncio
-import os
-import sys
 import numpy as np
 import pytest
-
-# Ensure backend and ml-service are in sys.path
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-backend_path = os.path.join(BASE_DIR, "backend")
-ml_path = os.path.join(BASE_DIR, "ml-service")
-if backend_path not in sys.path:
-    sys.path.insert(0, backend_path)
-if ml_path not in sys.path:
-    sys.path.insert(0, ml_path)
+from tests.helpers import BACKEND_DIR, import_subproject_module
 
 
 # ---------------------------------------------------------------------------
@@ -26,7 +16,16 @@ if ml_path not in sys.path:
 @pytest.mark.asyncio
 async def test_ollama_stream_generation():
     """OllamaLLMEngine streams non-empty text clauses with active model."""
-    from src.services.llm_service import OllamaLLMEngine
+    try:
+        import httpx
+        resp = httpx.get("http://localhost:11434/api/tags", timeout=2.0)
+        if resp.status_code != 200:
+            pytest.skip("Ollama is not running on localhost:11434")
+    except Exception:
+        pytest.skip("Ollama is not reachable on localhost:11434")
+
+    llm_mod = import_subproject_module(BACKEND_DIR, "src.services.llm_service")
+    OllamaLLMEngine = llm_mod.OllamaLLMEngine
 
     engine = OllamaLLMEngine()
     clauses = []
@@ -53,9 +52,17 @@ async def test_ollama_stream_generation():
 @pytest.mark.asyncio
 async def test_kokoro_synthesis():
     """KokoroTTSService synthesises speech clauses into PCM int16 chunks."""
-    from src.services.tts_service import KokoroTTSService
+    tts_mod = import_subproject_module(BACKEND_DIR, "src.services.tts_service")
+    KokoroTTSService = tts_mod.KokoroTTSService
 
-    tts = KokoroTTSService()
+    try:
+        tts = KokoroTTSService()
+    except Exception as exc:
+        pytest.skip(f"Kokoro TTS initialization skipped (requires model download or onnxruntime): {exc}")
+
+    if getattr(tts, "_kokoro", None) is None:
+        pytest.skip("Kokoro ONNX model not loaded or unavailable")
+
     audio_chunks = []
 
     async def collect_audio(chunk: np.ndarray):
@@ -80,7 +87,8 @@ async def test_kokoro_synthesis():
 @pytest.mark.asyncio
 async def test_bcsm_scorer_structure():
     """BCSMScorer returns a valid stage, scores, and feedback dict without external APIs."""
-    from src.services.scoring_service import BCSMScorer
+    scoring_mod = import_subproject_module(BACKEND_DIR, "src.services.scoring_service")
+    BCSMScorer = scoring_mod.BCSMScorer
 
     scorer = BCSMScorer()
     result = await scorer.evaluate_turn(
@@ -107,15 +115,32 @@ async def test_bcsm_scorer_structure():
 @pytest.mark.asyncio
 async def test_full_turn_pipeline():
     """Test full turn end-to-end: LLM generates text and TTS pipes PCM to track."""
-    from src.services.llm_service import OllamaLLMEngine
-    from src.services.tts_service import KokoroTTSService
-    from src.services.webrtc_service import CustomOutboundAudioTrack
+    try:
+        import httpx
+        resp = httpx.get("http://localhost:11434/api/tags", timeout=2.0)
+        if resp.status_code != 200:
+            pytest.skip("Ollama not running on localhost:11434")
+    except Exception:
+        pytest.skip("Ollama not reachable on localhost:11434")
+
+    llm_mod = import_subproject_module(BACKEND_DIR, "src.services.llm_service")
+    tts_mod = import_subproject_module(BACKEND_DIR, "src.services.tts_service")
+    webrtc_mod = import_subproject_module(BACKEND_DIR, "src.services.webrtc_service")
+
+    OllamaLLMEngine = llm_mod.OllamaLLMEngine
+    KokoroTTSService = tts_mod.KokoroTTSService
+    CustomOutboundAudioTrack = webrtc_mod.CustomOutboundAudioTrack
 
     llm = OllamaLLMEngine()
-    tts = KokoroTTSService()
-    track = CustomOutboundAudioTrack()
+    try:
+        tts = KokoroTTSService()
+    except Exception as exc:
+        pytest.skip(f"Kokoro TTS unavailable: {exc}")
 
-    received_frames = []
+    if getattr(tts, "_kokoro", None) is None:
+        pytest.skip("Kokoro ONNX model not loaded")
+
+    track = CustomOutboundAudioTrack()
 
     async def on_audio_chunk(pcm_chunk):
         await track.add_pcm_chunk(pcm_chunk)

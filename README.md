@@ -220,16 +220,22 @@ Auralis/
 
 ### 1. Environment Configuration
 
-Create `backend/.env` with your API keys:
+Auralis is built for **100% local, zero-cloud runtime** by default using:
+- **Local LLM**: Ollama (`qwen2.5:7b-instruct-q4_K_M` or any installed model at `localhost:11434`)
+- **Local TTS**: Kokoro ONNX (cached locally, `kokoro-v1.0.onnx`)
+- **Local ASR & Emotion**: Faster-Whisper + Wav2Vec2 ONNX (CPU int8 or CUDA)
+
+Create `backend/.env` (optional customizations):
 
 ```ini
-GROQ_API_KEY=gsk_your_groq_api_key_here
-CARTESIA_API_KEY=sk_car_your_cartesia_api_key_here
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=qwen2.5:7b-instruct-q4_K_M
+KOKORO_VOICE_EN=af_sarah
+ML_SERVICE_URL=http://localhost:8001
+DEBUG=false
 ```
 
-> **Obtain Credentials**:
-> - **Groq Cloud**: [https://console.groq.com](https://console.groq.com) *(Free tier available)*
-> - **Cartesia AI**: [https://play.cartesia.ai](https://play.cartesia.ai) *(Sonic voice synthesis)*
+*(Optional)* If cloud LLM / TTS adapters are configured, you can provide `GROQ_API_KEY` or `CARTESIA_API_KEY`.
 
 ---
 
@@ -374,9 +380,9 @@ Psychological de-escalation requires **vocal pacing**:
   - [x] Dual-stream emotion fusion (text semantic valence vs acoustic prosody discrepancy).
   - [x] Dynamic TTS prosody modulation (pacing & pitch adaptation to trainee stress).
   - [x] Multi-scenario crisis incident selector (Bank Hostage, Bridge Jumper, Cyber Extortion).
-- [ ] **Milestone 5**: Production Infrastructure & Benchmarking
-  - [ ] Docker Compose environment & GPU Dockerfiles.
-  - [ ] Automated end-to-end TTFA latency measurement harness.
+- [x] **Milestone 5**: Production Infrastructure & Benchmarking
+  - [x] Docker Compose environment & GPU Dockerfiles.
+  - [x] Automated end-to-end TTFA latency measurement harness.
 
 ---
 

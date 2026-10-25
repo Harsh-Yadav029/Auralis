@@ -5,6 +5,7 @@ Run: pytest tests/test_phase1_smoke.py -v
 """
 import numpy as np
 import pytest
+from tests.helpers import BACKEND_DIR, ML_SERVICE_DIR, import_subproject_module
 
 
 # ---------------------------------------------------------------------------
@@ -28,14 +29,9 @@ def test_ollama_reachable():
 # ---------------------------------------------------------------------------
 def test_whisper_transcribes_silence():
     """FasterWhisperEngine must not raise on 320 samples of silence."""
-    import sys, os
-
-    ml_service_path = os.path.join(os.path.dirname(__file__), "..", "ml-service")
-    if ml_service_path not in sys.path:
-        sys.path.insert(0, ml_service_path)
-
     try:
-        from src.models.asr_whisper import FasterWhisperEngine  # noqa: E402
+        mod = import_subproject_module(ML_SERVICE_DIR, "src.models.asr_whisper")
+        FasterWhisperEngine = mod.FasterWhisperEngine
     except ImportError as exc:
         pytest.skip(f"ml-service import failed: {exc}")
 
@@ -50,11 +46,9 @@ def test_whisper_transcribes_silence():
 # ---------------------------------------------------------------------------
 def test_vad_processes_frame():
     """SileroVADDetector must process a 512-sample frame and return correct keys."""
-    import sys, os
-
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "ml-service"))
-
-    from src.models.vad_silero import SileroVADDetector, FRAME_SAMPLES  # noqa: E402
+    mod = import_subproject_module(ML_SERVICE_DIR, "src.models.vad_silero")
+    SileroVADDetector = mod.SileroVADDetector
+    FRAME_SAMPLES = mod.FRAME_SAMPLES
 
     assert FRAME_SAMPLES == 512, f"Frame samples must be 512, got {FRAME_SAMPLES}"
 
@@ -74,11 +68,8 @@ def test_vad_processes_frame():
 # ---------------------------------------------------------------------------
 def test_emotion_returns_valid_dict():
     """Wav2Vec2EmotionClassifier must return all required keys with correct types."""
-    import sys, os
-
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "ml-service"))
-
-    from src.models.emotion_wav2vec2 import Wav2Vec2EmotionClassifier  # noqa: E402
+    mod = import_subproject_module(ML_SERVICE_DIR, "src.models.emotion_wav2vec2")
+    Wav2Vec2EmotionClassifier = mod.Wav2Vec2EmotionClassifier
 
     classifier = Wav2Vec2EmotionClassifier(ema_alpha=0.3)
 
@@ -101,11 +92,8 @@ def test_emotion_returns_valid_dict():
 # ---------------------------------------------------------------------------
 def test_ollama_engine_builds_prompt():
     """OllamaLLMEngine.build_system_prompt must produce a non-empty string."""
-    import sys, os
-
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
-
-    from src.services.llm_service import OllamaLLMEngine  # noqa: E402
+    mod = import_subproject_module(BACKEND_DIR, "src.services.llm_service")
+    OllamaLLMEngine = mod.OllamaLLMEngine
 
     engine = OllamaLLMEngine()
     prompt = engine.build_system_prompt(
@@ -121,11 +109,8 @@ def test_ollama_engine_builds_prompt():
 # ---------------------------------------------------------------------------
 def test_kokoro_prosody():
     """KokoroTTSService.calculate_prosody must return correct speeds."""
-    import sys, os
-
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
-
-    from src.services.tts_service import KokoroTTSService  # noqa: E402
+    mod = import_subproject_module(BACKEND_DIR, "src.services.tts_service")
+    KokoroTTSService = mod.KokoroTTSService
 
     assert KokoroTTSService.calculate_prosody(0.9)["speed"] == 0.88
     assert KokoroTTSService.calculate_prosody(0.2)["speed"] == 1.05

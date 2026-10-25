@@ -22,7 +22,6 @@ ml-service/venv/
 ml-service/.venv/
 build/
 develop-eggs/
-
 dist/
 downloads/
 eggs/
@@ -31,12 +30,12 @@ lib/
 lib64/
 parts/
 sdist/
-var/
 wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 .pytest_cache/
+.ruff_cache/
 .coverage
 htmlcov/
 
@@ -49,7 +48,7 @@ htmlcov/
 *.ckpt
 *.h5
 .cache/
-models/
+/models/
 
 # Node.js / React Frontend
 node_modules/
