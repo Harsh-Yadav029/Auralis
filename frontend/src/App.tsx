@@ -1,4 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import gsap from 'gsap';
+import {
+  Mic,
+  Radio,
+  Brain,
+  Award,
+  Activity,
+  Settings,
+  Palette,
+  PhoneCall,
+  PhoneOff,
+  Sun,
+  Moon,
+  ShieldAlert,
+  Zap,
+} from 'lucide-react';
 import { WebRTCProvider, useWebRTC } from './services/WebRTCContext';
 import { ThemeProvider, useTheme } from './services/ThemeContext';
 import { BriefingPage } from './pages/BriefingPage';
@@ -8,6 +24,7 @@ import { ScorecardPage } from './pages/ScorecardPage';
 import { TelemetryPage } from './pages/TelemetryPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { DevColorsPage } from './pages/DevColorsPage';
+import { ThreeBackground } from './components/ThreeBackground';
 
 type NavPage = 'briefing' | 'warroom' | 'analytics' | 'scorecard' | 'telemetry' | 'settings' | 'devcolors';
 
@@ -27,62 +44,110 @@ const AppContent: React.FC = () => {
     setStatusNotice,
   } = useWebRTC();
 
-  const navItems: { id: NavPage; label: string; icon: string }[] = [
-    { id: 'briefing', label: 'Briefing', icon: '🎯' },
-    { id: 'warroom', label: 'War Room', icon: '🎙' },
-    { id: 'analytics', label: 'Emotion Radar', icon: '🧠' },
-    { id: 'scorecard', label: 'BCSM Scorecard', icon: '🏅' },
-    { id: 'telemetry', label: 'Telemetry', icon: '⚡' },
-    { id: 'settings', label: 'Settings', icon: '⚙️' },
-    { id: 'devcolors', label: '/dev/colors', icon: '🎨' },
+  const headerRef = useRef<HTMLElement>(null);
+  const mainContentRef = useRef<HTMLElement>(null);
+  const ribbonRef = useRef<HTMLDivElement>(null);
+
+  // GSAP Smooth Page Transitions
+  useEffect(() => {
+    if (mainContentRef.current) {
+      gsap.fromTo(
+        mainContentRef.current,
+        { opacity: 0, y: 15, scale: 0.99 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: 'power2.out' }
+      );
+    }
+  }, [currentPage]);
+
+  // Initial header entrance
+  useEffect(() => {
+    if (headerRef.current) {
+      gsap.from(headerRef.current, {
+        y: -40,
+        opacity: 0,
+        duration: 0.6,
+        ease: 'power3.out',
+      });
+    }
+  }, []);
+
+  const navItems: { id: NavPage; label: string; icon: React.ReactNode }[] = [
+    { id: 'briefing', label: 'Briefing', icon: <Radio size={16} /> },
+    { id: 'warroom', label: 'War Room', icon: <Mic size={16} /> },
+    { id: 'analytics', label: 'Emotion Radar', icon: <Brain size={16} /> },
+    { id: 'scorecard', label: 'BCSM Stairway', icon: <Award size={16} /> },
+    { id: 'telemetry', label: 'Telemetry', icon: <Activity size={16} /> },
+    { id: 'settings', label: 'Settings', icon: <Settings size={16} /> },
+    { id: 'devcolors', label: '/dev/colors', icon: <Palette size={16} /> },
   ];
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', color: 'var(--text)' }}>
-      {/* Top Universal Navbar */}
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      {/* 3D Neural Particle & Waveform Background */}
+      <ThreeBackground intensity={resolvedTheme === 'dark' ? 0.9 : 0.45} />
+
+      {/* Top Universal Ultra-SaaS Navbar */}
       <header
+        ref={headerRef}
+        className="glass-panel"
         style={{
-          height: '60px',
+          height: '68px',
+          margin: '12px 20px 0 20px',
           padding: '0 24px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          borderBottom: '1px solid var(--border)',
-          background: 'var(--surface)',
           position: 'sticky',
-          top: 0,
+          top: '12px',
           zIndex: 100,
         }}
       >
-        {/* Brand / Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* Brand / Logo with Neon Accent */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div
             style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              background: 'var(--accent)',
+              width: '38px',
+              height: '38px',
+              borderRadius: '10px',
+              background: 'var(--accent-gradient)',
               color: 'var(--on-accent)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontWeight: 900,
+              fontSize: '18px',
+              boxShadow: '0 4px 18px var(--accent-glow)',
             }}
           >
             A
           </div>
           <div>
-            <div style={{ fontSize: '15px', fontWeight: 900, letterSpacing: '0.08em', color: 'var(--text)' }}>
-              AURALIS
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '16px', fontWeight: 900, letterSpacing: '0.08em', color: 'var(--text)' }}>
+                AURALIS
+              </span>
+              <span className="badge badge-accent" style={{ fontSize: '9px', padding: '2px 8px' }}>
+                AI VOICE OS
+              </span>
             </div>
-            <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '-2px' }}>
-              Bhaav Emotion Design System
+            <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 500 }}>
+              Full-Duplex Crisis Intelligence
             </div>
           </div>
         </div>
 
-        {/* Center: Navigation Bar */}
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        {/* Center: Interactive SaaS Navigation Pill Tabs */}
+        <nav
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            background: 'rgba(0, 0, 0, 0.25)',
+            padding: '4px',
+            borderRadius: '14px',
+            border: '1px solid var(--border)',
+          }}
+        >
           {navItems.map((item) => {
             const isActive = currentPage === item.id;
             return (
@@ -92,16 +157,17 @@ const AppContent: React.FC = () => {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  padding: '7px 14px',
-                  borderRadius: '8px',
-                  border: isActive ? '1px solid var(--accent)' : '1px solid transparent',
-                  background: isActive ? 'var(--surface-elevated)' : 'transparent',
-                  color: isActive ? 'var(--accent)' : 'var(--text-muted)',
+                  gap: '8px',
+                  padding: '8px 16px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: isActive ? 'var(--accent-gradient)' : 'transparent',
+                  color: isActive ? 'var(--on-accent)' : 'var(--text-muted)',
                   fontWeight: isActive ? 700 : 500,
                   fontSize: '13px',
                   cursor: 'pointer',
-                  transition: 'all 0.15s ease',
+                  transition: 'all 0.22s var(--ease-spring)',
+                  boxShadow: isActive ? '0 4px 16px var(--accent-glow)' : 'none',
                 }}
               >
                 <span>{item.icon}</span>
@@ -111,8 +177,8 @@ const AppContent: React.FC = () => {
           })}
         </nav>
 
-        {/* Right: Quick Theme Switcher & Call Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Right: Quick Controls & Live Session Launcher */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {/* Quick theme cycle button */}
           <button
             className="btn btn-ghost btn-sm"
@@ -121,118 +187,158 @@ const AppContent: React.FC = () => {
               else if (themePreference === 'dark') setThemePreference('light');
               else setThemePreference('system');
             }}
-            title="Toggle Theme (System / Dark / Light)"
+            title="Toggle Theme"
+            style={{ borderRadius: '10px' }}
           >
-            {resolvedTheme === 'dark' ? '🌙 Dark' : '☀️ Light'}
+            {resolvedTheme === 'dark' ? <Moon size={14} /> : <Sun size={14} />}
           </button>
 
           {isConnected && (
             <div
               style={{
                 fontFamily: 'var(--font-mono)',
-                fontSize: '12px',
+                fontSize: '13px',
                 fontWeight: 700,
-                color: 'var(--accent)',
-                background: 'var(--surface-elevated)',
-                border: '1px solid var(--border)',
-                padding: '4px 10px',
-                borderRadius: '6px',
+                color: 'var(--secondary)',
+                background: 'rgba(0, 242, 254, 0.1)',
+                border: '1px solid rgba(0, 242, 254, 0.3)',
+                padding: '6px 14px',
+                borderRadius: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 0 16px rgba(0, 242, 254, 0.2)',
               }}
             >
+              <span
+                style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: 'var(--secondary)',
+                  boxShadow: '0 0 8px var(--secondary)',
+                }}
+              />
               {formatTime(elapsed)}
             </div>
           )}
 
           {isConnected ? (
-            <button className="btn btn-danger btn-sm" onClick={stopSession}>
-              Disconnect
+            <button className="btn btn-danger btn-sm" onClick={stopSession} style={{ gap: '6px' }}>
+              <PhoneOff size={14} />
+              <span>Disconnect</span>
             </button>
           ) : (
-            <button className="btn btn-primary btn-sm" onClick={startSession}>
-              Connect Call
+            <button className="btn btn-primary btn-sm" onClick={startSession} style={{ gap: '6px' }}>
+              <PhoneCall size={14} />
+              <span>Connect Call</span>
             </button>
           )}
         </div>
       </header>
 
-      {/* Floating Status Ribbon */}
+      {/* Floating Tactical Telemetry Ribbon */}
       <div
+        ref={ribbonRef}
+        className="glass-panel"
         style={{
-          height: '36px',
-          padding: '0 24px',
+          margin: '10px 20px 0 20px',
+          height: '42px',
+          padding: '0 20px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          background: 'var(--surface-elevated)',
-          borderBottom: '1px solid var(--border)',
-          fontSize: '11px',
+          fontSize: '12px',
+          borderRadius: '12px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span
               style={{
-                width: '7px',
-                height: '7px',
+                width: '8px',
+                height: '8px',
                 borderRadius: '50%',
-                background: isConnected ? 'var(--secondary)' : 'var(--text-muted)',
+                background: isConnected ? 'var(--emerald)' : 'var(--text-dim)',
+                boxShadow: isConnected ? '0 0 10px var(--emerald)' : 'none',
               }}
             />
-            <span style={{ color: 'var(--text-muted)' }}>State:</span>
-            <strong style={{ color: isConnected ? 'var(--accent)' : 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+            <span style={{ color: 'var(--text-muted)' }}>Engine State:</span>
+            <strong
+              style={{
+                color: isConnected ? 'var(--accent)' : 'var(--text-dim)',
+                fontFamily: 'var(--font-mono)',
+                textTransform: 'uppercase',
+              }}
+            >
               {sessionState}
             </strong>
           </div>
 
-          <div style={{ width: '1px', height: '14px', background: 'var(--border)' }} />
+          <div style={{ width: '1px', height: '16px', background: 'var(--border)' }} />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ color: 'var(--text-muted)' }}>Emotion:</span>
-            <strong style={{ color: 'var(--text)' }}>{emotionLabel}</strong>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ color: 'var(--text-muted)' }}>Acoustic Affect:</span>
+            <span className="badge badge-accent" style={{ fontSize: '10px' }}>
+              {emotionLabel}
+            </span>
           </div>
 
-          <div style={{ width: '1px', height: '14px', background: 'var(--border)' }} />
+          <div style={{ width: '1px', height: '16px', background: 'var(--border)' }} />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ color: 'var(--text-muted)' }}>TTFA:</span>
-            <strong style={{ color: 'var(--accent)', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Zap size={13} color="var(--secondary)" />
+            <span style={{ color: 'var(--text-muted)' }}>Response TTFA:</span>
+            <strong style={{ color: 'var(--secondary)', fontFamily: 'var(--font-mono)' }}>
               {ttfa > 0 ? `${ttfa}ms` : '—'}
             </strong>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)' }}>
-          <span>Theme: <strong style={{ color: 'var(--accent)' }}>{resolvedTheme}</strong></span>
-          <span>• Mode: <strong>{themePreference}</strong></span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', color: 'var(--text-muted)', fontSize: '11px' }}>
+          <span>Latency SLA: <strong style={{ color: 'var(--emerald)' }}>&lt;800ms Passed</strong></span>
+          <span>• Barge-in SLA: <strong style={{ color: 'var(--accent)' }}>&lt;150ms Active</strong></span>
         </div>
       </div>
 
-      {/* Status Notice */}
+      {/* Status Notice Alert with Pulse */}
       {statusNotice && (
         <div
+          className="glass-panel"
           style={{
-            padding: '8px 24px',
+            margin: '10px 20px 0 20px',
+            padding: '10px 20px',
             background: 'var(--danger-bg)',
-            borderBottom: '1px solid var(--danger-border)',
+            border: '1px solid var(--danger-border)',
             color: 'var(--danger-text)',
             fontSize: '12px',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
+            borderRadius: '12px',
           }}
         >
-          <span>⚠️ {statusNotice}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <ShieldAlert size={16} />
+            <span>{statusNotice}</span>
+          </div>
           <button
             onClick={() => setStatusNotice(null)}
-            style={{ background: 'transparent', border: 'none', color: 'var(--danger-text)', cursor: 'pointer' }}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--danger-text)',
+              cursor: 'pointer',
+              fontWeight: 800,
+            }}
           >
             ✕
           </button>
         </div>
       )}
 
-      {/* Main Multi-Page Container */}
-      <main style={{ flex: 1, padding: '20px 24px', overflowY: 'auto' }}>
+      {/* Main SaaS Multi-Page Container */}
+      <main ref={mainContentRef} style={{ flex: 1, padding: '16px 20px 24px 20px', overflowY: 'auto' }}>
         {currentPage === 'briefing' && (
           <BriefingPage onEnterWarRoom={() => setCurrentPage('warroom')} />
         )}
