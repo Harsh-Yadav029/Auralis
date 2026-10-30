@@ -176,7 +176,7 @@ Auralis/
 │   ├── src/
 │   │   ├── main.py                      # WebSocket stream (/ws/stream) & REST inference
 │   │   ├── config.py                    # Whisper model size, compute type, VAD parameters
-│   │   └── models/
+│   │   └── models/chec
 │   │       ├── vad_silero.py            # Silero VAD frame parser & hangover tracker
 │   │       ├── asr_whisper.py           # Faster-Whisper int8 CTranslate2 runtime
 │   │       └── emotion_wav2vec2.py      # Wav2Vec2 acoustic valence & arousal classifier
