@@ -76,7 +76,7 @@ OUTPUT ONLY valid JSON matching this exact structure, no markdown, no explanatio
             "options": {"temperature": 0.1, "num_predict": 220},
         }
         try:
-            async with httpx.AsyncClient(timeout=15.0) as client:
+            async with httpx.AsyncClient(timeout=2.0) as client:
                 resp = await client.post(
                     f"{self.ollama_base_url}/api/generate",
                     json=payload,

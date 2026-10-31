@@ -63,6 +63,14 @@ def test_docker_compose_configuration():
 @pytest.mark.asyncio
 async def test_benchmark_single_turn_contract():
     """Verify benchmark_single_turn returns complete timing dictionary."""
+    import httpx
+    try:
+        resp = httpx.get("http://localhost:11434/api/tags", timeout=1.0)
+        if resp.status_code != 200:
+            pytest.skip("Ollama is not running on localhost:11434")
+    except Exception:
+        pytest.skip("Ollama is not reachable on localhost:11434")
+
     import sys
     if BASE_DIR not in sys.path:
         sys.path.insert(0, BASE_DIR)
