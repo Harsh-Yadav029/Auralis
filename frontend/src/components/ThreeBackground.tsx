@@ -36,7 +36,7 @@ export const ThreeBackground: React.FC<ThreeBackgroundProps> = ({
     container.appendChild(renderer.domElement);
 
     // Particle Field representing Neural Speech & Emotion Matrix
-    const particleCount = 750;
+    const particleCount = 280;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     const colors = new Float32Array(particleCount * 3);
@@ -96,10 +96,10 @@ export const ThreeBackground: React.FC<ThreeBackgroundProps> = ({
     const particleTexture = new THREE.CanvasTexture(canvas);
 
     const material = new THREE.PointsMaterial({
-      size: 3.2,
+      size: 2.2,
       map: particleTexture,
       transparent: true,
-      opacity: 0.65 * intensity,
+      opacity: 0.35 * intensity,
       vertexColors: true,
       blending: THREE.AdditiveBlending,
       depthWrite: false,

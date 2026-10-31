@@ -6,18 +6,18 @@
 [data-theme="dark"] {
   --bg: #090B10;
   --bg-gradient: radial-gradient(circle at 50% 0%, rgba(240, 169, 75, 0.08) 0%, rgba(9, 11, 16, 1) 70%);
-  --surface: rgba(18, 22, 31, 0.72);
+  --surface: rgba(18, 22, 31, 0.88);
   --surface-solid: #12161F;
-  --surface-elevated: rgba(26, 32, 46, 0.82);
-  --surface-hover: rgba(36, 44, 62, 0.9);
+  --surface-elevated: rgba(26, 32, 46, 0.94);
+  --surface-hover: rgba(36, 44, 62, 0.96);
 
-  --border: rgba(255, 255, 255, 0.09);
-  --border-interactive: rgba(240, 169, 75, 0.45);
-  --border-glow: 0 0 20px rgba(240, 169, 75, 0.15);
+  --border: rgba(255, 255, 255, 0.14);
+  --border-interactive: rgba(240, 169, 75, 0.55);
+  --border-glow: 0 0 20px rgba(240, 169, 75, 0.25);
 
-  --text: #F3F4F6;
-  --text-muted: #9CA3AF;
-  --text-dim: #6B7280;
+  --text: #F9FAFB;
+  --text-muted: #CBD5E1;
+  --text-dim: #94A3B8;
 
   --accent: #F0A94B;
   --accent-glow: rgba(240, 169, 75, 0.35);
