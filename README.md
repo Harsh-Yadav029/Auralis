@@ -176,24 +176,25 @@ Auralis/
 │   ├── src/
 │   │   ├── main.py                      # WebSocket stream (/ws/stream) & REST inference
 │   │   ├── config.py                    # Whisper model size, compute type, VAD parameters
-│   │   └── models/chec
+│   │   └── models/
 │   │       ├── vad_silero.py            # Silero VAD frame parser & hangover tracker
 │   │       ├── asr_whisper.py           # Faster-Whisper int8 CTranslate2 runtime
 │   │       └── emotion_wav2vec2.py      # Wav2Vec2 acoustic valence & arousal classifier
 │   └── requirements.txt
 │
-├── frontend/                            # React Trainee Dashboard
+├── frontend/                            # React Trainee Dashboard & WebGL Cockpit
 │   ├── src/
 │   │   ├── App.tsx                      # Dashboard orchestrator & telemetry console
 │   │   ├── services/
-│   │   │   └── webrtc.service.ts        # Client WebRTC connection & datachannel handlers
-│   │   └── components/
-│   │       ├── AudioVisualizer.tsx      # 60fps Web Audio API waveform canvas
-│   │       ├── EmotionMeter.tsx         # 2D quadrant emotion meter (Arousal vs Valence)
-│   │       ├── BCSMStaircase.tsx        # FBI BCSM 5-stage tactical scorecard
-│   │       └── LatencyHUD.tsx           # Live latency gauge (TTFA, VAD, Barge-in)
+│   │   │   └── WebRTCContext.tsx        # Resilient WebRTC connection & signaling context
+│   │   ├── components/
+│   │   │   ├── AudioVisualizer.tsx      # 60fps Web Audio API waveform canvas
+│   │   │   ├── BhaavOrb.tsx             # 3D Three.js + GSAP emotion-reactive particle orb
+│   │   │   ├── EmotionQuadrantRadar.tsx # Russell circumplex quadrant radar with crosshairs
+│   │   │   ├── BCSMStaircase.tsx        # FBI BCSM 5-stage tactical scorecard
+│   │   │   └── LatencyHUD.tsx           # Live latency gauge (TTFA, VAD, Barge-in)
 │   ├── package.json
-│   └── vite.config.ts
+│   └── vite.config.ts                   # Manual chunking & code splitting
 │
 ├── infra/                               # Deployment & Infrastructure
 │   ├── docker/
@@ -383,6 +384,12 @@ Psychological de-escalation requires **vocal pacing**:
 - [x] **Milestone 5**: Production Infrastructure & Benchmarking
   - [x] Docker Compose environment & GPU Dockerfiles.
   - [x] Automated end-to-end TTFA latency measurement harness.
+- [x] **Milestone 6**: Enterprise SaaS Redesign & Verification
+  - [x] Three.js + GSAP 3D Bhaav particle orb reacting to vocal valence & arousal.
+  - [x] Glassmorphism design tokens conforming to WCAG 2.1 AAA contrast.
+  - [x] Standardized `.env.example` configurations across frontend, gateway, and ML service.
+  - [x] Vite chunk splitting optimization for sub-second production bundle delivery.
+  - [x] Robust test suite coverage (smoke, contracts, integration, and benchmarks).
 
 ---
 
