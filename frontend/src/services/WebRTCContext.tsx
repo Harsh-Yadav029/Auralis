@@ -92,8 +92,11 @@ export const WebRTCProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     try {
       setStatusNotice(null);
       const host = window.location.hostname || 'localhost';
+      const defaultWsUrl = `ws://${host}:8000/ws/signaling`;
+      const signalingUrl = (import.meta as any).env?.VITE_SIGNALING_WS_URL || defaultWsUrl;
+
       const client = new AuralisWebRTCClient({
-        signalingUrl: `ws://${host}:8000/ws/signaling`,
+        signalingUrl,
         iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
         onTranscript: (text: string) => {
           setTranscript(text);
@@ -152,7 +155,7 @@ export const WebRTCProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     if (webrtcRef.current) {
       webrtcRef.current.sendTurnRequest(msg, { arousal: 0.92, valence: -0.80, primary_label: 'panic' });
     } else {
-      setStatusNotice("Connect first using 'Start Simulation' to activate the WebRTC engine.");
+      setStatusNotice("Connect first using 'Connect Call' to activate the WebRTC engine.");
     }
   };
 
