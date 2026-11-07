@@ -1,0 +1,49 @@
+services:
+  # -------------------------------------------------------------
+  # 1. Backend WebRTC Gateway (FastAPI + aiortc + Kokoro ONNX)
+  # -------------------------------------------------------------
+  - type: web
+    name: auralis-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: standard
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: DEBUG
+        value: false
+      - key: ML_SERVICE_URL
+        value: http://auralis-ml:8001
+      - key: OLLAMA_BASE_URL
+        value: http://localhost:11434
+      - key: OLLAMA_MODEL
+        value: qwen2.5:7b-instruct-q4_K_M
+      - key: KOKORO_VOICE_EN
+        value: af_sarah
+      - key: KOKORO_VOICE_HI
+        value: af_sarah
+      - key: KOKORO_DEVICE
+        value: cpu
+
+  # -------------------------------------------------------------
+  # 2. ML Audio Microservice (Whisper ASR + Wav2Vec2 SER + Silero VAD)
+  # -------------------------------------------------------------
+  - type: web
+    name: auralis-ml
+    runtime: docker
+    dockerfilePath: ./ml-service/Dockerfile
+    dockerContext: ./ml-service
+    plan: standard
+    envVars:
+      - key: PORT
+        value: 8001
+      - key: DEBUG
+        value: false
+      - key: WHISPER_MODEL
+        value: distil-small.en
+      - key: WHISPER_DEVICE
+        value: cpu
+      - key: COMPUTE_TYPE
+        value: int8
+
