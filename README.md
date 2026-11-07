@@ -35,6 +35,9 @@
   - [Prerequisites](#prerequisites)
   - [1. Environment Configuration](#1-environment-configuration)
   - [2. Microservices Setup & Execution](#2-microservices-setup--execution)
+- [Production Cloud Deployment](#-production-cloud-deployment)
+  - [Deploying Frontend to Vercel](#1-deploying-frontend-to-vercel)
+  - [Deploying Services to Render (Free Tier)](#2-deploying-services-to-render-free-tier)
 - [Operational Verification & Telemetry](#-operational-verification--telemetry)
 - [Crisis Negotiation Intelligence Layer](#-crisis-negotiation-intelligence-layer)
   - [1. FBI BCSM Tactical Scoring Engine](#1-fbi-bcsm-tactical-scoring-engine)
@@ -274,6 +277,50 @@ npm run dev
 
 ---
 
+## ☁️ Production Cloud Deployment
+
+Auralis is fully pre-configured for one-click free tier deployment using **Render** (containerized microservices) and **Vercel** (static frontend with SPA routing).
+
+### 1. Deploying Frontend to Vercel
+
+1. Import your GitHub repository to [Vercel](https://vercel.com/new).
+2. Configure Project Settings:
+   - **Framework Preset**: `Vite`
+   - **Root Directory**: `frontend`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+3. Add Environment Variable:
+   - `VITE_SIGNALING_WS_URL`: `wss://<your-render-backend-url>/ws/signaling`
+   - `VITE_BACKEND_URL`: `https://<your-render-backend-url>`
+4. Deploy! Vercel handles the SPA rewrites via `frontend/vercel.json`.
+
+### 2. Deploying Services to Render (Free Tier)
+
+Deploy two web services on [Render](https://dashboard.render.com):
+
+#### Service A: `auralis-ml` (ML Audio Engine)
+- **Runtime**: `Docker`
+- **Root Directory**: `ml-service`
+- **Instance Type**: `Free` (512MB RAM)
+- **Environment Variables**:
+  - `PORT`: `8001`
+  - `WHISPER_MODEL`: `distil-small.en`
+  - `WHISPER_DEVICE`: `cpu`
+  - `COMPUTE_TYPE`: `int8`
+  - `ENABLE_WAV2VEC2`: `false` *(uses zero-RAM acoustic heuristic engine to stay safely within 512MB RAM)*
+
+#### Service B: `auralis-backend` (WebRTC Gateway)
+- **Runtime**: `Docker`
+- **Root Directory**: `backend`
+- **Instance Type**: `Free`
+- **Environment Variables**:
+  - `PORT`: `8000`
+  - `ML_SERVICE_URL`: `https://<your-auralis-ml-url>.onrender.com`
+  - `KOKORO_DEVICE`: `cpu`
+  - *(Optional cloud API keys)*: `GROQ_API_KEY`, `CARTESIA_API_KEY`
+
+---
+
 ## 🧪 Operational Verification & Telemetry
 
 1. **Connect**: Click **"Start Simulation"** in the web dashboard and allow microphone access.
@@ -386,9 +433,13 @@ Psychological de-escalation requires **vocal pacing**:
   - [x] Automated end-to-end TTFA latency measurement harness.
 - [x] **Milestone 6**: Enterprise SaaS Redesign & Verification
   - [x] Three.js + GSAP 3D Bhaav particle orb reacting to vocal valence & arousal.
+  - [x] Organic living Emotion Orb animations with reactive breathing rhythms & radiating energy pulses.
   - [x] Glassmorphism design tokens conforming to WCAG 2.1 AAA contrast.
   - [x] Standardized `.env.example` configurations across frontend, gateway, and ML service.
   - [x] Vite chunk splitting optimization for sub-second production bundle delivery.
+  - [x] Single-Page Application (SPA) Vercel configuration (`frontend/vercel.json`).
+  - [x] Low-memory mode optimization (`ENABLE_WAV2VEC2=false`) for seamless 512MB RAM Render Free tier deployment.
+  - [x] Multi-service `render.yaml` blueprint and step-by-step cloud setup documentation.
   - [x] Robust test suite coverage (smoke, contracts, integration, and benchmarks).
 
 ---
