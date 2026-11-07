@@ -1,4 +1,4 @@
-﻿/* ─── Bhaav Color System Design Tokens ─────────────────────────────────────── */
+/* ─── Bhaav Color System Design Tokens ─────────────────────────────────────── */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 /* ─── Dark Theme (Default) ─────────────────────────────────────────────────── */
@@ -233,22 +233,68 @@ textarea:focus-visible {
   border-color: var(--secondary);
 }
 
-/* ─── Emotion Orb (Rule: 600-800ms transition, prefers-reduced-motion check) ─ */
+/* ─── Emotion Orb (Living organic pulse & emotional glow) ─────────────────── */
+@keyframes orb-breathe {
+  0%, 100% {
+    transform: scale(1) translateY(0);
+    box-shadow: 0 0 28px var(--orb-glow), 0 0 54px rgba(240, 169, 75, 0.25);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.05) translateY(-2px);
+    box-shadow: 0 0 38px var(--orb-glow), 0 0 70px rgba(240, 169, 75, 0.42);
+    filter: brightness(1.08);
+  }
+}
+
+@keyframes orb-ripple {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.75;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 0.15;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+.bhaav-orb-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bhaav-orb-pulse-ring {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, var(--orb-tint, var(--orb-stop-1)) 10%, transparent 70%);
+  animation: orb-ripple 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
 .bhaav-orb {
-  width: 90px;
-  height: 90px;
+  position: relative;
+  z-index: 1;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, var(--orb-tint, var(--orb-stop-1)) 0%, var(--orb-stop-2) 55%, var(--orb-stop-3) 100%);
   box-shadow: 0 0 32px var(--orb-glow);
-  transition: background 700ms ease-in-out, box-shadow 700ms ease-in-out, transform 700ms ease-in-out;
+  animation: orb-breathe 4s ease-in-out infinite;
+  transition: background 700ms ease-in-out, box-shadow 700ms ease-in-out, filter 700ms ease;
+  will-change: transform, box-shadow;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .bhaav-orb,
+  .bhaav-orb-pulse-ring,
   .anim-fade-up,
   .anim-fade-in {
-    transition: none !important;
     animation: none !important;
+    transition: none !important;
   }
 }
 
