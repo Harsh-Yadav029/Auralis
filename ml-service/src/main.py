@@ -32,7 +32,10 @@ asr_engine = FasterWhisperEngine(
     device=settings.whisper_device,
     language=settings.whisper_language,
 )
-emotion_classifier = Wav2Vec2EmotionClassifier(ema_alpha=settings.emotion_ema_alpha)
+emotion_classifier = Wav2Vec2EmotionClassifier(
+    ema_alpha=settings.emotion_ema_alpha,
+    enabled=settings.enable_wav2vec2,
+)
 
 class ProcessAudioRequest(BaseModel):
     pcm16_base64: str = ""

@@ -19,13 +19,17 @@ class Wav2Vec2EmotionClassifier:
 
     MODEL_NAME = "audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim"
 
-    def __init__(self, ema_alpha: float = _DEFAULT_EMA_ALPHA):
+    def __init__(self, ema_alpha: float = _DEFAULT_EMA_ALPHA, enabled: bool = True):
         self.ema_alpha = ema_alpha
+        self.enabled = enabled
         self._ema_arousal: float | None = None
         self._ema_valence: float | None = None
         self._processor = None
         self._model = None
-        self._load_model()
+        if self.enabled:
+            self._load_model()
+        else:
+            logger.info("Wav2Vec2 SER model disabled via config. Using acoustic heuristic fallback (low memory mode).")
 
     def _load_model(self):
         try:

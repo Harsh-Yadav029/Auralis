@@ -18,6 +18,7 @@ class Settings(BaseSettings):
 
     # Emotion SER settings
     emotion_ema_alpha: float = 0.3
+    enable_wav2vec2: bool = True
 
     model_config = SettingsConfigDict(
         env_file=".env",
