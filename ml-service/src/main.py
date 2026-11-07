@@ -83,6 +83,11 @@ async def websocket_audio_stream(websocket: WebSocket):
         while True:
             message = await websocket.receive()
             
+            # Normal client disconnect packet
+            if message.get("type") == "websocket.disconnect":
+                logger.info("ML Audio Streaming Client disconnected normally")
+                break
+
             # Binary frame receiving (raw PCM)
             if "bytes" in message and message["bytes"]:
                 byte_buffer.extend(message["bytes"])
@@ -143,7 +148,13 @@ async def websocket_audio_stream(websocket: WebSocket):
     except WebSocketDisconnect:
         logger.info("ML Audio Streaming Client disconnected")
     except Exception as e:
-        logger.error(f"Error in ML Audio Streaming: {e}", exc_info=True)
+        # Check if error is due to disconnect before logging error traceback
+        if "disconnect message has been received" in str(e).lower():
+            logger.info("ML Audio Streaming Client disconnected")
+        else:
+            logger.error(f"Error in ML Audio Streaming: {e}", exc_info=True)
+    finally:
+        logger.info("ML Audio Streaming session ended cleanly")
 
 if __name__ == "__main__":
     import uvicorn
